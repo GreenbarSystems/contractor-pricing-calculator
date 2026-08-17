@@ -16,7 +16,9 @@ Read [docs/customer-language.md](docs/customer-language.md) for the product voca
 
 A browser calculator (Next.js App Router + React) sitting on top of a framework-independent TypeScript pricing engine.
 
-The page asks for a job in five plain-language steps — about this job, your crew, what you will buy or pay for, costs of running your business, and your profit goal — and answers with a recommended price, the lowest price that covers costs, the profit you keep, a cost breakdown, and a $500-either-side scenario table. Work in progress is kept in the browser's local storage, so nothing is sent anywhere and no account is needed.
+The page asks three plain-language steps — your crew, what you will buy or pay for, and your profit goal — and answers with a recommended price, the lowest price that covers costs, the profit you keep, a cost breakdown, and a $500-either-side scenario table. Work in progress is kept in the browser's local storage, so nothing is sent anywhere and no account is needed.
+
+Nothing is required to get a price. Naming the job is optional, blank numbers count as zero, and business costs sit behind an optional opener rather than in the main flow, because most contractors have never worked out what a year of running their business costs and should not have to before they can price a job. The engine's own warning tells them what the price does not yet cover.
 
 The engine underneath includes:
 

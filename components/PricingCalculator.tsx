@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BusinessCostsSection } from "./sections/BusinessCostsSection.js";
 import { CrewSection } from "./sections/CrewSection.js";
-import { JobDetailsSection } from "./sections/JobDetailsSection.js";
+import { JobNameField } from "./sections/JobNameField.js";
 import { ProfitGoalSection } from "./sections/ProfitGoalSection.js";
 import { PurchasesSection } from "./sections/PurchasesSection.js";
 import { ResultsPanel } from "./ResultsPanel.js";
@@ -67,11 +67,12 @@ export function PricingCalculator() {
   return (
     <div className="layout" id="calculator">
       <div className="form-column">
-        <JobDetailsSection draft={draft} update={update} errors={errors} />
+        <JobNameField draft={draft} update={update} />
         <CrewSection draft={draft} update={update} errors={errors} crewHours={crewHours} />
         <PurchasesSection draft={draft} update={update} errors={errors} />
-        <BusinessCostsSection draft={draft} update={update} errors={errors} crewHours={crewHours} />
         <ProfitGoalSection draft={draft} update={update} errors={errors} />
+        {/* After the three steps, not among them: the price exists by now. */}
+        <BusinessCostsSection draft={draft} update={update} errors={errors} crewHours={crewHours} />
 
         <div className="footer-note">
           <span>Your numbers stay in this browser. Nothing is sent anywhere and no account is needed.</span>
@@ -91,13 +92,13 @@ export function PricingCalculator() {
       {/* Phone-only running total. The full panel below already announces this,
           so it is hidden from screen readers and holds nothing focusable. */}
       <div className="mobile-price-bar" aria-hidden="true">
-        {result ? (
+        {result && result.totalJobCost > 0 ? (
           <>
             <span className="mobile-price-label">{customerLanguage.recommendedPrice.label}</span>
             <span className="mobile-price-amount">{formatCurrency(result.recommendedPrice)}</span>
           </>
         ) : (
-          <span className="mobile-price-label">Fill in the steps to see your price</span>
+          <span className="mobile-price-label">Your price appears here as you fill this in</span>
         )}
       </div>
     </div>

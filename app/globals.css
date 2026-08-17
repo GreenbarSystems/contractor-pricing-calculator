@@ -417,43 +417,142 @@ button {
 }
 
 @media (min-width: 560px) {
-  .row-grid.crew-top {
-    grid-template-columns: 2fr 1fr;
-  }
-
   .row-grid.crew-numbers {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .row-grid.material {
-    grid-template-columns: 2fr 1fr 1fr;
-  }
-
-  .row-grid.other-cost {
-    grid-template-columns: 2fr 1.2fr 1fr;
+  .row-grid.two-up {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
-.overtime-details {
+/* ---------- folded-away detail ---------- */
+
+.disclosure {
   margin-top: 14px;
   border-top: 1px dashed var(--line-strong);
   padding-top: 12px;
 }
 
-.overtime-details > summary {
+.disclosure > summary {
   cursor: pointer;
   font-weight: 650;
   font-size: 0.93rem;
   color: var(--green);
-  list-style: revert;
+  padding: 2px 0;
 }
 
-.overtime-details > summary::-webkit-details-marker {
+.disclosure > summary::marker {
   color: var(--green);
 }
 
-.overtime-body {
+.disclosure > summary:hover {
+  color: var(--green-deep);
+}
+
+.disclosure-body {
   margin-top: 14px;
+}
+
+/* The wage-burden line reads as a setting, not as another question. */
+.disclosure.inline-setting {
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.disclosure.inline-setting > summary {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.disclosure.inline-setting > summary strong {
+  color: var(--ink);
+}
+
+/* ---------- optional, unnumbered section ---------- */
+
+.optional-section {
+  border-style: dashed;
+  background: #fdfbf7;
+}
+
+.optional-section .disclosure {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+
+.optional-section summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.optional-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: var(--amber-soft);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.optional-summary-title {
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+
+.soft-hint {
+  margin-top: 14px;
+  background: var(--amber-soft);
+  border-left: 4px solid var(--amber);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+  color: #6f3608;
+}
+
+/* ---------- slim job name line ---------- */
+
+.job-name-bar {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px 24px;
+}
+
+@media (min-width: 620px) {
+  .job-name-bar .field {
+    max-width: 460px;
+  }
+}
+
+.group-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+
+.group-title.spaced {
+  margin-top: 34px;
+}
+
+.running-total {
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
+.field-grid.spaced-top {
+  margin-top: 18px;
 }
 
 /* ---------- buttons ---------- */
@@ -836,7 +935,7 @@ button {
   gap: 6px;
 }
 
-.disclosure {
+.legal-note {
   margin-top: 22px;
   font-size: 0.85rem;
   color: var(--ink-faint);

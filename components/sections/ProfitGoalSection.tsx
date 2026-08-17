@@ -15,7 +15,7 @@ export function ProfitGoalSection({ draft, update, errors }: Props) {
 
   return (
     <Section
-      step="Step 5"
+      step="Step 3"
       title="Your profit goal"
       note="How much of the customer's payment you want to keep after the costs above are paid."
     >

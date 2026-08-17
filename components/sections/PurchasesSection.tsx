@@ -1,15 +1,14 @@
 "use client";
 
-import { NumberField, Section, SelectField, TextField } from "../ui/Fields.js";
+import { NumberField, Section, TextField } from "../ui/Fields.js";
 import {
   createMaterialRow,
   createOtherCostRow,
-  otherJobCostCategories,
   type CalculatorDraft,
   type MaterialRowDraft,
   type OtherCostRowDraft,
 } from "../../lib/calculatorState.js";
-import { customerLanguage, type OtherJobCostCategory } from "../../src/pricing/index.js";
+import { customerLanguage } from "../../src/pricing/index.js";
 
 interface Props {
   draft: CalculatorDraft;
@@ -36,23 +35,19 @@ export function PurchasesSection({ draft, update, errors }: Props) {
 
   return (
     <Section
-      step="Step 3"
+      step="Step 2"
       title="What you will buy or pay for"
-      note="Everything you pay out for this job that is not crew pay."
+      note="Everything you pay out on this job that is not crew pay."
     >
-      <h3 className="row-card-title" style={{ display: "block", marginBottom: 12 }}>
-        {customerLanguage.materialCost.label}
-      </h3>
-      <p className="section-note" style={{ marginTop: 0 }}>
-        {customerLanguage.materialCost.help}
-      </p>
+      <h3 className="group-title">{customerLanguage.materialCost.label}</h3>
+      <p className="section-note">{customerLanguage.materialCost.help}</p>
 
       <div className="row-list">
         {draft.materialRows.map((row, index) => (
           <div className="row-card" key={row.id}>
-            <div className="row-card-head">
-              <span className="row-card-title">Material {index + 1}</span>
-              {draft.materialRows.length > 1 ? (
+            {draft.materialRows.length > 1 ? (
+              <div className="row-card-head">
+                <span className="row-card-title">Material {index + 1}</span>
                 <button
                   type="button"
                   className="btn btn-remove"
@@ -62,15 +57,9 @@ export function PurchasesSection({ draft, update, errors }: Props) {
                 >
                   Remove<span className="visually-hidden"> material {index + 1}</span>
                 </button>
-              ) : null}
-            </div>
-            <div className="row-grid material">
-              <TextField
-                label="What you are buying"
-                value={row.description}
-                onChange={(value) => setMaterial(index, { description: value })}
-                placeholder="Lumber package"
-              />
+              </div>
+            ) : null}
+            <div className="row-grid two-up">
               <NumberField
                 label="How many"
                 value={row.quantity}
@@ -98,19 +87,10 @@ export function PurchasesSection({ draft, update, errors }: Props) {
         + Add another material
       </button>
 
-      <h3 className="row-card-title" style={{ display: "block", margin: "32px 0 12px" }}>
-        {customerLanguage.otherJobCosts.label}
-      </h3>
-      <p className="section-note" style={{ marginTop: 0 }}>
-        {customerLanguage.otherJobCosts.help}
-      </p>
+      <h3 className="group-title spaced">{customerLanguage.otherJobCosts.label}</h3>
+      <p className="section-note">{customerLanguage.otherJobCosts.help}</p>
 
-      {draft.otherCostRows.length === 0 ? (
-        <p className="help" style={{ color: "var(--ink-faint)" }}>
-          Nothing added yet. Add a line if this job has permits, a rental, a subcontractor, delivery,
-          or disposal.
-        </p>
-      ) : (
+      {draft.otherCostRows.length > 0 ? (
         <div className="row-list">
           {draft.otherCostRows.map((row, index) => (
             <div className="row-card" key={row.id}>
@@ -126,20 +106,12 @@ export function PurchasesSection({ draft, update, errors }: Props) {
                   Remove<span className="visually-hidden"> other cost {index + 1}</span>
                 </button>
               </div>
-              <div className="row-grid other-cost">
+              <div className="row-grid two-up">
                 <TextField
                   label="What it is for"
                   value={row.description}
                   onChange={(value) => setOtherCost(index, { description: value })}
                   placeholder="City permit"
-                />
-                <SelectField
-                  label="Kind of cost"
-                  value={row.category}
-                  onChange={(value) =>
-                    setOtherCost(index, { category: value as OtherJobCostCategory })
-                  }
-                  options={otherJobCostCategories}
                 />
                 <NumberField
                   label="Amount"
@@ -153,14 +125,14 @@ export function PurchasesSection({ draft, update, errors }: Props) {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       <button
         type="button"
         className="btn btn-add"
         onClick={() => update({ otherCostRows: [...draft.otherCostRows, createOtherCostRow()] })}
       >
-        + Add another job cost
+        + Add a permit, rental, subcontractor, or dump fee
       </button>
     </Section>
   );

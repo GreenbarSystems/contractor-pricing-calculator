@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  businessCostsAreUsable,
+  businessCostsNeedHours,
   createEmptyDraft,
   draftToPricingInput,
+  FALLBACK_JOB_NAME,
   issuesByPath,
   reviveDraft,
   totalCrewHours,
@@ -15,7 +18,6 @@ const filledDraft = (): CalculatorDraft => ({
   laborRows: [
     {
       id: "crew-1",
-      description: "Carpenter",
       hourlyWage: "25",
       workers: "2",
       regularHours: "40",
@@ -24,8 +26,8 @@ const filledDraft = (): CalculatorDraft => ({
     },
   ],
   extraWageCostPercent: "28",
-  materialRows: [{ id: "material-1", description: "Lumber", quantity: "1", unitCost: "2000" }],
-  otherCostRows: [{ id: "other-1", description: "Permit", amount: "250", category: "permit" }],
+  materialRows: [{ id: "material-1", quantity: "1", unitCost: "2000" }],
+  otherCostRows: [{ id: "other-1", description: "Permit", amount: "250" }],
   annualBusinessCosts: "75000",
   annualSellableHours: "4000",
   targetProfitPercent: "20",
@@ -47,10 +49,8 @@ describe("draftToPricingInput", () => {
   });
 
   it("treats blank number fields as zero rather than as an error", () => {
-    const draft = { ...filledDraft(), annualBusinessCosts: "", annualSellableHours: "" };
-    const input = draftToPricingInput(draft);
+    const input = draftToPricingInput({ ...createEmptyDraft(), jobName: "Deck" });
 
-    expect(input.businessCosts).toEqual({ annualBusinessCosts: 0, annualSellableHours: 0 });
     expect(validateJobPricingInput(input).isValid).toBe(true);
   });
 
@@ -59,7 +59,6 @@ describe("draftToPricingInput", () => {
 
     expect(input.proposedPrice).toBeUndefined();
     expect(input.manualJobHours).toBeUndefined();
-    expect(input.jobReference).toBeUndefined();
   });
 
   it("passes a quoted price through when one is typed", () => {
@@ -86,13 +85,62 @@ describe("draftToPricingInput", () => {
   });
 });
 
-describe("validation surfaced to the form", () => {
-  it("asks for a job name before pricing anything", () => {
-    const validation = validateJobPricingInput(draftToPricingInput(createEmptyDraft()));
+describe("naming a job never blocks a price", () => {
+  it("prices an unnamed job so a contractor gets an answer first", () => {
+    const draft = { ...filledDraft(), jobName: "" };
+    const input = draftToPricingInput(draft);
 
-    expect(issuesByPath(validation).get("jobName")).toBe("Enter a name for this job.");
+    expect(input.jobName).toBe(FALLBACK_JOB_NAME);
+    expect(validateJobPricingInput(input).isValid).toBe(true);
+    expect(calculateJobPrice(input).recommendedPrice).toBe(7887.5);
   });
 
+  it("prices a completely blank form without a single validation issue", () => {
+    const validation = validateJobPricingInput(draftToPricingInput(createEmptyDraft()));
+
+    expect(validation.isValid).toBe(true);
+    expect(validation.issues).toEqual([]);
+  });
+
+  it("keeps a typed name", () => {
+    expect(draftToPricingInput(filledDraft()).jobName).toBe("Kitchen remodel - Smith");
+  });
+});
+
+describe("half-filled business costs", () => {
+  it("is treated as not-yet rather than as an error", () => {
+    const draft = { ...filledDraft(), annualSellableHours: "" };
+    const input = draftToPricingInput(draft);
+
+    expect(businessCostsNeedHours(draft)).toBe(true);
+    expect(businessCostsAreUsable(draft)).toBe(false);
+    expect(input.businessCosts).toBeUndefined();
+    expect(validateJobPricingInput(input).isValid).toBe(true);
+  });
+
+  it("still returns a price, and warns that business costs are missing", () => {
+    const result = calculateJobPrice(
+      draftToPricingInput({ ...filledDraft(), annualSellableHours: "" }),
+    );
+
+    expect(result.totalJobCost).toBe(4810);
+    expect(result.recommendedPrice).toBe(6012.5);
+    expect(result.warnings.map((warning) => warning.code)).toContain("BUSINESS_COSTS_NOT_INCLUDED");
+  });
+
+  it("counts business costs once both halves are present", () => {
+    const draft = filledDraft();
+
+    expect(businessCostsAreUsable(draft)).toBe(true);
+    expect(businessCostsNeedHours(draft)).toBe(false);
+    expect(draftToPricingInput(draft).businessCosts).toEqual({
+      annualBusinessCosts: 75000,
+      annualSellableHours: 4000,
+    });
+  });
+});
+
+describe("validation surfaced to the form", () => {
   it("indexes row issues by the path the form looks up", () => {
     const draft = filledDraft();
     const validation = validateJobPricingInput(
@@ -105,12 +153,12 @@ describe("validation surfaced to the form", () => {
     expect(issuesByPath(validation).has("laborItems.0.hourlyWage")).toBe(true);
   });
 
-  it("asks for sellable hours once annual business costs are entered", () => {
+  it("flags a profit goal of 100% or more", () => {
     const validation = validateJobPricingInput(
-      draftToPricingInput({ ...filledDraft(), annualSellableHours: "" }),
+      draftToPricingInput({ ...filledDraft(), targetProfitPercent: "100" }),
     );
 
-    expect(issuesByPath(validation).has("businessCosts.annualSellableHours")).toBe(true);
+    expect(issuesByPath(validation).has("targetProfitRate")).toBe(true);
   });
 });
 
@@ -149,9 +197,19 @@ describe("reviveDraft", () => {
     expect(revived?.materialRows.length).toBeGreaterThan(0);
   });
 
-  it("replaces an unknown job-cost category with a safe one", () => {
-    const revived = reviveDraft({ otherCostRows: [{ amount: "100", category: "wildcard" }] });
+  it("reads a draft saved by the older, wordier form", () => {
+    const revived = reviveDraft({
+      jobName: "Old job",
+      jobReference: "Estimate 12",
+      laborRows: [{ id: "crew-9", description: "Carpenter", hourlyWage: "40", regularHours: "8" }],
+      materialRows: [{ id: "material-9", description: "Lumber", quantity: "2", unitCost: "50" }],
+      otherCostRows: [{ id: "other-9", description: "Permit", amount: "100", category: "permit" }],
+    });
 
-    expect(revived?.otherCostRows[0]!.category).toBe("other");
+    expect(revived?.laborRows[0]!.hourlyWage).toBe("40");
+    expect(revived?.materialRows[0]!.unitCost).toBe("50");
+    expect(revived?.otherCostRows[0]!.description).toBe("Permit");
+    expect(revived && Object.keys(revived.laborRows[0]!)).not.toContain("description");
+    expect(calculateJobPrice(draftToPricingInput(revived!)).totalJobCost).toBeGreaterThan(0);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 
 interface BaseFieldProps {
   label: string;
@@ -160,7 +160,7 @@ export function SelectField({ label, value, onChange, options, help, error, opti
 }
 
 interface SectionProps {
-  step: string;
+  step?: string;
   title: string;
   note?: string;
   children: React.ReactNode;
@@ -172,11 +172,39 @@ export function Section({ step, title, note, children }: SectionProps) {
   return (
     <section className="section" aria-labelledby={headingId}>
       <div className="section-heading">
-        <span className="section-step">{step}</span>
+        {step ? <span className="section-step">{step}</span> : null}
         <h2 id={headingId}>{title}</h2>
       </div>
       {note ? <p className="section-note">{note}</p> : null}
       {children}
     </section>
+  );
+}
+
+interface DisclosureProps {
+  summary: React.ReactNode;
+  /** Holds the panel open regardless of what the user clicked. */
+  forceOpen?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+/**
+ * Extra detail stays folded away until it is wanted. `forceOpen` is how a field
+ * with a validation error pulls itself back into view: a message the contractor
+ * cannot see is worse than an extra open panel.
+ */
+export function Disclosure({ summary, forceOpen = false, children, className }: DisclosureProps) {
+  const [opened, setOpened] = useState(false);
+
+  return (
+    <details
+      className={`disclosure${className ? ` ${className}` : ""}`}
+      open={opened || forceOpen}
+      onToggle={(event) => setOpened(event.currentTarget.open)}
+    >
+      <summary>{summary}</summary>
+      <div className="disclosure-body">{children}</div>
+    </details>
   );
 }

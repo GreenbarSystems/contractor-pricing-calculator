@@ -1,6 +1,6 @@
 "use client";
 
-import { NumberField, Section, TextField } from "../ui/Fields.js";
+import { Disclosure, NumberField, Section } from "../ui/Fields.js";
 import { createLaborRow, type CalculatorDraft, type LaborRowDraft } from "../../lib/calculatorState.js";
 import { customerLanguage } from "../../src/pricing/index.js";
 
@@ -23,35 +23,33 @@ export function CrewSection({ draft, update, errors, crewHours }: Props) {
   const removeRow = (index: number) =>
     update({ laborRows: draft.laborRows.filter((_, rowIndex) => rowIndex !== index) });
 
+  const extraWageError = errors.get("extraWageCostRate");
+
   return (
     <Section
-      step="Step 2"
+      step="Step 1"
       title="Your crew"
-      note="Add a line for each kind of worker on this job. Use the pay rate you actually pay them, before taxes and benefits."
+      note="What you pay the people on this job, before taxes and benefits."
     >
       <div className="row-list">
         {draft.laborRows.map((row, index) => {
           const prefix = `laborItems.${index}`;
+          const overtimeError =
+            errors.get(`${prefix}.overtimeHoursPerWorker`) ?? errors.get(`${prefix}.overtimeMultiplier`);
           const hasOvertime = row.overtimeHours.trim() !== "" && Number(row.overtimeHours) > 0;
 
           return (
             <div className="row-card" key={row.id}>
-              <div className="row-card-head">
-                <span className="row-card-title">Crew line {index + 1}</span>
-                {draft.laborRows.length > 1 ? (
+              {draft.laborRows.length > 1 ? (
+                <div className="row-card-head">
+                  <span className="row-card-title">Crew line {index + 1}</span>
                   <button type="button" className="btn btn-remove" onClick={() => removeRow(index)}>
                     Remove<span className="visually-hidden"> crew line {index + 1}</span>
                   </button>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
 
-              <div className="row-grid crew-top">
-                <TextField
-                  label="Who is doing the work"
-                  value={row.description}
-                  onChange={(value) => setRow(index, { description: value })}
-                  placeholder="Lead carpenter"
-                />
+              <div className="row-grid crew-numbers">
                 <NumberField
                   label="Hourly pay"
                   prefix="$"
@@ -60,47 +58,45 @@ export function CrewSection({ draft, update, errors, crewHours }: Props) {
                   placeholder="25"
                   error={errors.get(`${prefix}.hourlyWage`)}
                 />
-              </div>
-
-              <div className="row-grid crew-numbers" style={{ marginTop: 14 }}>
                 <NumberField
-                  label="How many workers"
+                  label="Workers"
                   value={row.workers}
                   onChange={(value) => setRow(index, { workers: value })}
                   step="1"
                   error={errors.get(`${prefix}.workers`)}
                 />
                 <NumberField
-                  label="Regular hours each"
+                  label="Hours each"
                   suffix="hrs"
                   value={row.regularHours}
                   onChange={(value) => setRow(index, { regularHours: value })}
                   placeholder="40"
                   error={errors.get(`${prefix}.regularHoursPerWorker`)}
                 />
-                <NumberField
-                  label="Overtime hours each"
-                  optional
-                  suffix="hrs"
-                  value={row.overtimeHours}
-                  onChange={(value) => setRow(index, { overtimeHours: value })}
-                  error={errors.get(`${prefix}.overtimeHoursPerWorker`)}
-                />
               </div>
 
-              <details className="overtime-details" open={hasOvertime}>
-                <summary>Overtime pay rate</summary>
-                <div className="overtime-body">
+              <Disclosure
+                summary={hasOvertime ? "Overtime" : "Add overtime"}
+                forceOpen={hasOvertime || overtimeError !== undefined}
+              >
+                <div className="row-grid two-up">
                   <NumberField
-                    label="Overtime is paid at this many times the hourly pay"
+                    label="Overtime hours each"
+                    suffix="hrs"
+                    value={row.overtimeHours}
+                    onChange={(value) => setRow(index, { overtimeHours: value })}
+                    error={errors.get(`${prefix}.overtimeHoursPerWorker`)}
+                  />
+                  <NumberField
+                    label="Paid at this many times the hourly pay"
                     value={row.overtimeMultiplier}
                     onChange={(value) => setRow(index, { overtimeMultiplier: value })}
                     step="0.1"
-                    help="Most contractors pay 1.5. Change it only if you pay something different."
+                    help="Most contractors pay 1.5."
                     error={errors.get(`${prefix}.overtimeMultiplier`)}
                   />
                 </div>
-              </details>
+              </Disclosure>
             </div>
           );
         })}
@@ -110,20 +106,34 @@ export function CrewSection({ draft, update, errors, crewHours }: Props) {
         + Add another crew line
       </button>
 
-      <div className="field-grid" style={{ marginTop: 24 }}>
+      {/* Already set to a workable default, so this is shown as a line they can
+          open rather than a percentage they have to answer up front. */}
+      <Disclosure
+        className="inline-setting"
+        forceOpen={extraWageError !== undefined}
+        summary={
+          <>
+            {customerLanguage.extraWageCosts.label}:{" "}
+            <strong>{draft.extraWageCostPercent.trim() === "" ? "0" : draft.extraWageCostPercent}%</strong>{" "}
+            of crew pay
+          </>
+        }
+      >
         <NumberField
           label={customerLanguage.extraWageCosts.label}
           suffix="%"
           value={draft.extraWageCostPercent}
           onChange={(value) => update({ extraWageCostPercent: value })}
-          help={`${customerLanguage.extraWageCosts.help} Enter it as a percentage of what you pay your crew. Many contractors use somewhere between 20% and 40%.`}
-          error={errors.get("extraWageCostRate")}
+          help={`${customerLanguage.extraWageCosts.help} Many contractors land somewhere between 20% and 40%.`}
+          error={extraWageError}
         />
-      </div>
+      </Disclosure>
 
-      <p className="section-note" style={{ marginTop: 16, marginBottom: 0 }}>
-        Crew hours on this job: <strong>{crewHours.toLocaleString("en-US")}</strong>
-      </p>
+      {crewHours > 0 ? (
+        <p className="section-note running-total">
+          Crew hours on this job: <strong>{crewHours.toLocaleString("en-US")}</strong>
+        </p>
+      ) : null}
     </Section>
   );
 }

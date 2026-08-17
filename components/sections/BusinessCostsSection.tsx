@@ -1,7 +1,13 @@
 "use client";
 
-import { NumberField, Section } from "../ui/Fields.js";
-import type { CalculatorDraft } from "../../lib/calculatorState.js";
+import { useState } from "react";
+import { NumberField } from "../ui/Fields.js";
+import {
+  businessCostsAreUsable,
+  businessCostsNeedHours,
+  businessCostsStarted,
+  type CalculatorDraft,
+} from "../../lib/calculatorState.js";
 import { customerLanguage } from "../../src/pricing/index.js";
 
 interface Props {
@@ -11,49 +17,79 @@ interface Props {
   crewHours: number;
 }
 
+/**
+ * Deliberately not a numbered step. Most contractors have never worked out what
+ * a year of running their business costs, and being asked before they have a
+ * price is what makes a calculator feel like homework. The price comes first;
+ * this is the offer to make that price cover the truck as well.
+ */
 export function BusinessCostsSection({ draft, update, errors, crewHours }: Props) {
-  return (
-    <Section
-      step="Step 4"
-      title="Costs of running your business"
-      note="Trucks, insurance, phone, software, the office, advertising, and the time you spend on estimates. This step spreads a fair share of those costs onto this job so your price helps pay for them."
-    >
-      <div className="field-grid two">
-        <NumberField
-          label="What it costs to run your business for a year"
-          prefix="$"
-          optional
-          value={draft.annualBusinessCosts}
-          onChange={(value) => update({ annualBusinessCosts: value })}
-          placeholder="75000"
-          help="Your best estimate is fine. Leave it blank if you are not ready to include it."
-          error={errors.get("businessCosts.annualBusinessCosts")}
-        />
-        <NumberField
-          label={customerLanguage.annualSellableHours.label}
-          suffix="hrs"
-          optional
-          value={draft.annualSellableHours}
-          onChange={(value) => update({ annualSellableHours: value })}
-          placeholder="4000"
-          help={customerLanguage.annualSellableHours.help}
-          error={errors.get("businessCosts.annualSellableHours")}
-        />
-      </div>
+  const [opened, setOpened] = useState(false);
+  const isOpen = opened || businessCostsStarted(draft);
 
-      {crewHours === 0 ? (
-        <div className="field-grid" style={{ marginTop: 18 }}>
-          <NumberField
-            label="How many hours will this job take"
-            suffix="hrs"
-            optional
-            value={draft.manualJobHours}
-            onChange={(value) => update({ manualJobHours: value })}
-            help="You have not entered any crew hours yet. Enter the job hours here and your business costs will still be shared onto this job."
-            error={errors.get("manualJobHours")}
-          />
+  return (
+    <section className="section optional-section">
+      <details
+        className="disclosure"
+        open={isOpen}
+        onToggle={(event) => setOpened(event.currentTarget.open)}
+      >
+        <summary>
+          <span className="optional-tag">Optional</span>
+          <span className="optional-summary-title">
+            Should this price help pay for your truck, insurance, and phone?
+          </span>
+        </summary>
+
+        <div className="disclosure-body">
+          <p className="section-note">
+            Running your business costs money whether or not you are on a job. If you know roughly
+            what a year costs you, this shares a fair slice of it onto this job. Skip it and your
+            price simply will not include it.
+          </p>
+
+          <div className="field-grid two">
+            <NumberField
+              label="What it costs to run your business for a year"
+              prefix="$"
+              value={draft.annualBusinessCosts}
+              onChange={(value) => update({ annualBusinessCosts: value })}
+              placeholder="75000"
+              help="Trucks, insurance, phone, software, the office, advertising. A rough number is fine."
+              error={errors.get("businessCosts.annualBusinessCosts")}
+            />
+            <NumberField
+              label={customerLanguage.annualSellableHours.label}
+              suffix="hrs"
+              value={draft.annualSellableHours}
+              onChange={(value) => update({ annualSellableHours: value })}
+              placeholder="4000"
+              help={customerLanguage.annualSellableHours.help}
+              error={errors.get("businessCosts.annualSellableHours")}
+            />
+          </div>
+
+          {businessCostsNeedHours(draft) ? (
+            <p className="soft-hint" role="status">
+              Add the hours you expect to sell and this will be shared onto the job. Until then your
+              price is based on job costs only.
+            </p>
+          ) : null}
+
+          {businessCostsAreUsable(draft) && crewHours === 0 ? (
+            <div className="field-grid spaced-top">
+              <NumberField
+                label="How many hours will this job take"
+                suffix="hrs"
+                value={draft.manualJobHours}
+                onChange={(value) => update({ manualJobHours: value })}
+                help="You have not entered crew hours yet, so this is how the share gets worked out."
+                error={errors.get("manualJobHours")}
+              />
+            </div>
+          ) : null}
         </div>
-      ) : null}
-    </Section>
+      </details>
+    </section>
   );
 }

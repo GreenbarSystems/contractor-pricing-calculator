@@ -37,7 +37,21 @@ export function ResultsPanel({ input, result, issues }: Props) {
             <li key={`${issue.path}-${issue.message}`}>{issue.message}</li>
           ))}
         </ul>
-        <p className="disclosure">{pricingEstimateDisclosure}</p>
+        <p className="legal-note">{pricingEstimateDisclosure}</p>
+      </div>
+    );
+  }
+
+  // Nothing costed yet. "$0.00" is technically right and useless to look at.
+  if (result.totalJobCost === 0) {
+    return (
+      <div className="results blocked">
+        <h2>Your price shows up here</h2>
+        <p>
+          Start with what you pay your crew — an hourly rate and the hours you expect the job to
+          take. The price updates as you type, and nothing is saved anywhere but this browser.
+        </p>
+        <p className="legal-note">{pricingEstimateDisclosure}</p>
       </div>
     );
   }
@@ -130,7 +144,7 @@ export function ResultsPanel({ input, result, issues }: Props) {
         </div>
       ) : null}
 
-      <p className="disclosure">{pricingEstimateDisclosure}</p>
+      <p className="legal-note">{pricingEstimateDisclosure}</p>
     </div>
   );
 }

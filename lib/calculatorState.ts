@@ -1,18 +1,17 @@
-import type {
-  JobPricingInput,
-  OtherJobCostCategory,
-  ValidationResult,
-} from "../src/pricing/index.js";
+import type { JobPricingInput, ValidationResult } from "../src/pricing/index.js";
 
 /**
  * The form keeps every number as a string so a contractor can clear a field or
  * type a partial number without the calculator fighting them. Numbers are only
  * produced when the draft is handed to the pricing engine.
+ *
+ * Rows carry only what the engine actually prices. Descriptions and cost
+ * categories were dropped from crew and material rows because nothing read
+ * them and nothing showed them back.
  */
 
 export interface LaborRowDraft {
   id: string;
-  description: string;
   hourlyWage: string;
   workers: string;
   regularHours: string;
@@ -22,21 +21,19 @@ export interface LaborRowDraft {
 
 export interface MaterialRowDraft {
   id: string;
-  description: string;
   quantity: string;
   unitCost: string;
 }
 
+/** Miscellaneous by nature, so this one keeps a label the contractor writes. */
 export interface OtherCostRowDraft {
   id: string;
   description: string;
   amount: string;
-  category: OtherJobCostCategory;
 }
 
 export interface CalculatorDraft {
   jobName: string;
-  jobReference: string;
   laborRows: LaborRowDraft[];
   extraWageCostPercent: string;
   materialRows: MaterialRowDraft[];
@@ -48,16 +45,13 @@ export interface CalculatorDraft {
   proposedPrice: string;
 }
 
-export const otherJobCostCategories: { value: OtherJobCostCategory; label: string }[] = [
-  { value: "subcontractor", label: "Subcontractor" },
-  { value: "equipment", label: "Equipment rental" },
-  { value: "permit", label: "Permit" },
-  { value: "delivery", label: "Delivery" },
-  { value: "disposal", label: "Disposal or dump fees" },
-  { value: "other", label: "Something else" },
-];
-
 export const profitGoalChoices = ["10", "15", "20", "25", "30", "35"] as const;
+
+/**
+ * The engine wants a job name, but a contractor should get a price before
+ * being asked to name anything. Naming the job stays optional in the form.
+ */
+export const FALLBACK_JOB_NAME = "Untitled job";
 
 let rowCounter = 0;
 
@@ -74,7 +68,6 @@ export function createRowId(prefix: string): string {
 export function createLaborRow(): LaborRowDraft {
   return {
     id: createRowId("crew"),
-    description: "",
     hourlyWage: "",
     workers: "1",
     regularHours: "",
@@ -84,17 +77,16 @@ export function createLaborRow(): LaborRowDraft {
 }
 
 export function createMaterialRow(): MaterialRowDraft {
-  return { id: createRowId("material"), description: "", quantity: "1", unitCost: "" };
+  return { id: createRowId("material"), quantity: "1", unitCost: "" };
 }
 
 export function createOtherCostRow(): OtherCostRowDraft {
-  return { id: createRowId("other"), description: "", amount: "", category: "other" };
+  return { id: createRowId("other"), description: "", amount: "" };
 }
 
 export function createEmptyDraft(): CalculatorDraft {
   return {
     jobName: "",
-    jobReference: "",
     laborRows: [createLaborRow()],
     extraWageCostPercent: "28",
     materialRows: [createMaterialRow()],
@@ -128,15 +120,37 @@ function percentToRate(value: string): number {
   return Number.isFinite(parsed) ? parsed / 100 : Number.NaN;
 }
 
+/**
+ * Business costs only mean something once both halves are present, since the
+ * engine divides one by the other. A half-filled pair is treated as "not yet"
+ * rather than as an error, so a contractor still gets a price and the engine's
+ * own "business costs are not included" warning does the explaining.
+ */
+export function businessCostsAreUsable(draft: CalculatorDraft): boolean {
+  return toNumber(draft.annualBusinessCosts) > 0 && toNumber(draft.annualSellableHours) > 0;
+}
+
+/** True once they have started on business costs but the pair is not complete. */
+export function businessCostsNeedHours(draft: CalculatorDraft): boolean {
+  return toNumber(draft.annualBusinessCosts) > 0 && !(toNumber(draft.annualSellableHours) > 0);
+}
+
+export function businessCostsStarted(draft: CalculatorDraft): boolean {
+  return (
+    draft.annualBusinessCosts.trim() !== "" ||
+    draft.annualSellableHours.trim() !== "" ||
+    draft.manualJobHours.trim() !== ""
+  );
+}
+
 export function draftToPricingInput(draft: CalculatorDraft): JobPricingInput {
-  const jobReference = draft.jobReference.trim();
+  const jobName = draft.jobName.trim();
 
   return {
-    jobName: draft.jobName,
-    ...(jobReference === "" ? {} : { jobReference }),
+    jobName: jobName === "" ? FALLBACK_JOB_NAME : jobName,
     laborItems: draft.laborRows.map((row) => ({
       id: row.id,
-      description: row.description,
+      description: "",
       hourlyWage: toNumber(row.hourlyWage),
       workers: toNumber(row.workers),
       regularHoursPerWorker: toNumber(row.regularHours),
@@ -147,7 +161,7 @@ export function draftToPricingInput(draft: CalculatorDraft): JobPricingInput {
     extraWageCostRate: percentToRate(draft.extraWageCostPercent),
     materialItems: draft.materialRows.map((row) => ({
       id: row.id,
-      description: row.description,
+      description: "",
       quantity: toNumber(row.quantity),
       unitCost: toNumber(row.unitCost),
     })),
@@ -155,12 +169,16 @@ export function draftToPricingInput(draft: CalculatorDraft): JobPricingInput {
       id: row.id,
       description: row.description,
       amount: toNumber(row.amount),
-      category: row.category,
+      category: "other" as const,
     })),
-    businessCosts: {
-      annualBusinessCosts: toNumber(draft.annualBusinessCosts),
-      annualSellableHours: toNumber(draft.annualSellableHours),
-    },
+    ...(businessCostsAreUsable(draft)
+      ? {
+          businessCosts: {
+            annualBusinessCosts: toNumber(draft.annualBusinessCosts),
+            annualSellableHours: toNumber(draft.annualSellableHours),
+          },
+        }
+      : {}),
     manualJobHours: toOptionalNumber(draft.manualJobHours),
     targetProfitRate: percentToRate(draft.targetProfitPercent),
     proposedPrice: toOptionalNumber(draft.proposedPrice),
@@ -195,7 +213,8 @@ export const DRAFT_STORAGE_KEY = "contractor-pricing-calculator:draft:v1";
 
 /**
  * Stored drafts come from an older version of this form, so every field is
- * re-checked against the current shape instead of being trusted.
+ * re-checked against the current shape instead of being trusted. Fields this
+ * form no longer has are simply not read.
  */
 export function reviveDraft(value: unknown): CalculatorDraft | null {
   if (typeof value !== "object" || value === null) return null;
@@ -205,13 +224,15 @@ export function reviveDraft(value: unknown): CalculatorDraft | null {
   const text = (input: unknown, fallbackText: string): string =>
     typeof input === "string" ? input : fallbackText;
 
+  const asRecord = (row: unknown): Record<string, unknown> =>
+    (typeof row === "object" && row !== null ? row : {}) as Record<string, unknown>;
+
   const laborRows = Array.isArray(stored.laborRows)
     ? stored.laborRows.map((row) => {
-        const source = (typeof row === "object" && row !== null ? row : {}) as Record<string, unknown>;
+        const source = asRecord(row);
         const blank = createLaborRow();
         return {
           id: text(source.id, blank.id),
-          description: text(source.description, ""),
           hourlyWage: text(source.hourlyWage, ""),
           workers: text(source.workers, "1"),
           regularHours: text(source.regularHours, ""),
@@ -223,38 +244,30 @@ export function reviveDraft(value: unknown): CalculatorDraft | null {
 
   const materialRows = Array.isArray(stored.materialRows)
     ? stored.materialRows.map((row) => {
-        const source = (typeof row === "object" && row !== null ? row : {}) as Record<string, unknown>;
+        const source = asRecord(row);
         const blank = createMaterialRow();
         return {
           id: text(source.id, blank.id),
-          description: text(source.description, ""),
           quantity: text(source.quantity, "1"),
           unitCost: text(source.unitCost, ""),
         };
       })
     : fallback.materialRows;
 
-  const knownCategories = new Set(otherJobCostCategories.map((option) => option.value));
   const otherCostRows = Array.isArray(stored.otherCostRows)
     ? stored.otherCostRows.map((row) => {
-        const source = (typeof row === "object" && row !== null ? row : {}) as Record<string, unknown>;
+        const source = asRecord(row);
         const blank = createOtherCostRow();
-        const category = source.category;
         return {
           id: text(source.id, blank.id),
           description: text(source.description, ""),
           amount: text(source.amount, ""),
-          category:
-            typeof category === "string" && knownCategories.has(category as OtherJobCostCategory)
-              ? (category as OtherJobCostCategory)
-              : ("other" as OtherJobCostCategory),
         };
       })
     : fallback.otherCostRows;
 
   return {
     jobName: text(stored.jobName, ""),
-    jobReference: text(stored.jobReference, ""),
     laborRows: laborRows.length > 0 ? laborRows : fallback.laborRows,
     extraWageCostPercent: text(stored.extraWageCostPercent, fallback.extraWageCostPercent),
     materialRows: materialRows.length > 0 ? materialRows : fallback.materialRows,
