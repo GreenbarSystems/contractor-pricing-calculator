@@ -144,7 +144,11 @@ describe("calculateJobPrice", () => {
       targetProfitRate: 0.173,
     });
 
-    expect(result.totalJobCost).toBeCloseTo(92.3105775, 12);
-    expect(result.recommendedPrice).toBeCloseTo(111.62101269649335, 12);
+    // labor pay 22.37 x 1 x 3.25 = 72.7025
+    // extra cost on top of wages 72.7025 x 0.271 = 19.7023775
+    expect(result.laborPay).toBeCloseTo(72.7025, 12);
+    expect(result.extraWageCosts).toBeCloseTo(19.7023775, 12);
+    expect(result.totalJobCost).toBeCloseTo(92.4048775, 12);
+    expect(result.recommendedPrice).toBeCloseTo(111.73503929866989, 12);
   });
 });

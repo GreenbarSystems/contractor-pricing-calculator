@@ -14,7 +14,11 @@ Read [docs/customer-language.md](docs/customer-language.md) for the product voca
 
 ## Current scope
 
-This first implementation is a framework-independent TypeScript pricing engine. It includes:
+A browser calculator (Next.js App Router + React) sitting on top of a framework-independent TypeScript pricing engine.
+
+The page asks for a job in five plain-language steps — about this job, your crew, what you will buy or pay for, costs of running your business, and your profit goal — and answers with a recommended price, the lowest price that covers costs, the profit you keep, a cost breakdown, and a $500-either-side scenario table. Work in progress is kept in the browser's local storage, so nothing is sent anywhere and no account is needed.
+
+The engine underneath includes:
 
 - Regular and overtime labor pay
 - Extra cost on top of wages
@@ -24,7 +28,7 @@ This first implementation is a framework-independent TypeScript pricing engine. 
 - Proposed-price profit, profit rate, markup, and status
 - Input validation, warnings, and automated tests
 
-The UI, persistence, PDF/Excel export, payments, CRM, invoicing, scheduling, accounting integrations, inventory, and project management are intentionally out of scope for this foundation.
+Accounts, databases, PDF/Excel export, payments, CRM, invoicing, scheduling, accounting integrations, inventory, and project management are intentionally out of scope.
 
 ## Architecture
 
@@ -40,8 +44,15 @@ Requirements: Node.js 20 or later.
 
 ```bash
 npm install
+npm run dev
+```
+
+Then open http://localhost:3000.
+
+```bash
 npm run typecheck
 npm test
+npm run build
 ```
 
 ## Important note
