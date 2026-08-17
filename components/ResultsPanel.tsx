@@ -27,30 +27,26 @@ interface Props {
 }
 
 export function ResultsPanel({ input, result, issues }: Props) {
-  if (!result) {
-    return (
-      <div className="results blocked">
-        <h2>A few numbers need a second look</h2>
-        <p>Fix these and your recommended price will appear here right away.</p>
-        <ul>
-          {issues.map((issue) => (
-            <li key={`${issue.path}-${issue.message}`}>{issue.message}</li>
-          ))}
-        </ul>
-        <p className="legal-note">{pricingEstimateDisclosure}</p>
-      </div>
-    );
-  }
+  // Either something needs fixing, or nothing has been costed yet and "$0.00"
+  // would be technically right and useless to look at.
+  if (!result || result.totalJobCost === 0) {
+    const needsFixing = !result;
 
-  // Nothing costed yet. "$0.00" is technically right and useless to look at.
-  if (result.totalJobCost === 0) {
     return (
       <div className="results blocked">
-        <h2>Your price shows up here</h2>
+        <h2>{needsFixing ? "A few numbers need a second look" : "Your price shows up here"}</h2>
         <p>
-          Start with what you pay your crew — an hourly rate and the hours you expect the job to
-          take. The price updates as you type, and nothing is saved anywhere but this browser.
+          {needsFixing
+            ? "Fix these and your recommended price will appear here right away."
+            : "Start with what you pay your crew — an hourly rate and the hours you expect the job to take. The price updates as you type, and nothing is saved anywhere but this browser."}
         </p>
+        {needsFixing ? (
+          <ul>
+            {issues.map((issue) => (
+              <li key={`${issue.path}-${issue.message}`}>{issue.message}</li>
+            ))}
+          </ul>
+        ) : null}
         <p className="legal-note">{pricingEstimateDisclosure}</p>
       </div>
     );
@@ -121,7 +117,7 @@ export function ResultsPanel({ input, result, issues }: Props) {
           </li>
         </ul>
         {result.laborHours > 0 ? (
-          <p className="sub" style={{ marginTop: 12, color: "var(--ink-faint)", fontSize: "0.86rem" }}>
+          <p className="breakdown-basis">
             Based on {result.laborHours.toLocaleString("en-US")} crew hours
             {result.businessCostPerHour > 0
               ? ` and ${formatCurrency(result.businessCostPerHour)} of business costs per hour`

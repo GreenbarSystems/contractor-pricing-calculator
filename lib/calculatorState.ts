@@ -60,7 +60,7 @@ let rowCounter = 0;
  * come from Date.now()/Math.random() during render or the server and client
  * markup would disagree on first paint.
  */
-export function createRowId(prefix: string): string {
+function createRowId(prefix: string): string {
   rowCounter += 1;
   return `${prefix}-${rowCounter}`;
 }
@@ -209,69 +209,72 @@ export function issuesByPath(validation: ValidationResult): Map<string, string> 
   return map;
 }
 
-export const DRAFT_STORAGE_KEY = "contractor-pricing-calculator:draft:v1";
+const DRAFT_STORAGE_KEY = "contractor-pricing-calculator:draft:v1";
+
+const text = (value: unknown, fallback: string): string =>
+  typeof value === "string" ? value : fallback;
+
+/**
+ * Rebuilds one kind of row from whatever was in storage. `defaults` doubles as
+ * the list of fields this form still has, so a row saved by an older, wordier
+ * version simply loses the fields that no longer exist.
+ */
+function reviveRows<T extends { id: string }>(
+  value: unknown,
+  idPrefix: string,
+  defaults: Omit<T, "id">,
+  fallback: T[],
+): T[] {
+  if (!Array.isArray(value)) return fallback;
+
+  const rows = value.map((row) => {
+    const source = (typeof row === "object" && row !== null ? row : {}) as Record<string, unknown>;
+    const revived: Record<string, unknown> = { id: text(source.id, createRowId(idPrefix)) };
+    for (const [field, fallbackValue] of Object.entries(defaults)) {
+      revived[field] = text(source[field], fallbackValue as string);
+    }
+    return revived as T;
+  });
+
+  return rows.length > 0 ? rows : fallback;
+}
 
 /**
  * Stored drafts come from an older version of this form, so every field is
- * re-checked against the current shape instead of being trusted. Fields this
- * form no longer has are simply not read.
+ * re-checked against the current shape instead of being trusted.
  */
 export function reviveDraft(value: unknown): CalculatorDraft | null {
   if (typeof value !== "object" || value === null) return null;
   const stored = value as Partial<Record<keyof CalculatorDraft, unknown>>;
   const fallback = createEmptyDraft();
 
-  const text = (input: unknown, fallbackText: string): string =>
-    typeof input === "string" ? input : fallbackText;
-
-  const asRecord = (row: unknown): Record<string, unknown> =>
-    (typeof row === "object" && row !== null ? row : {}) as Record<string, unknown>;
-
-  const laborRows = Array.isArray(stored.laborRows)
-    ? stored.laborRows.map((row) => {
-        const source = asRecord(row);
-        const blank = createLaborRow();
-        return {
-          id: text(source.id, blank.id),
-          hourlyWage: text(source.hourlyWage, ""),
-          workers: text(source.workers, "1"),
-          regularHours: text(source.regularHours, ""),
-          overtimeHours: text(source.overtimeHours, ""),
-          overtimeMultiplier: text(source.overtimeMultiplier, "1.5"),
-        };
-      })
-    : fallback.laborRows;
-
-  const materialRows = Array.isArray(stored.materialRows)
-    ? stored.materialRows.map((row) => {
-        const source = asRecord(row);
-        const blank = createMaterialRow();
-        return {
-          id: text(source.id, blank.id),
-          quantity: text(source.quantity, "1"),
-          unitCost: text(source.unitCost, ""),
-        };
-      })
-    : fallback.materialRows;
-
-  const otherCostRows = Array.isArray(stored.otherCostRows)
-    ? stored.otherCostRows.map((row) => {
-        const source = asRecord(row);
-        const blank = createOtherCostRow();
-        return {
-          id: text(source.id, blank.id),
-          description: text(source.description, ""),
-          amount: text(source.amount, ""),
-        };
-      })
-    : fallback.otherCostRows;
-
   return {
     jobName: text(stored.jobName, ""),
-    laborRows: laborRows.length > 0 ? laborRows : fallback.laborRows,
+    laborRows: reviveRows<LaborRowDraft>(
+      stored.laborRows,
+      "crew",
+      {
+        hourlyWage: "",
+        workers: "1",
+        regularHours: "",
+        overtimeHours: "",
+        overtimeMultiplier: "1.5",
+      },
+      fallback.laborRows,
+    ),
     extraWageCostPercent: text(stored.extraWageCostPercent, fallback.extraWageCostPercent),
-    materialRows: materialRows.length > 0 ? materialRows : fallback.materialRows,
-    otherCostRows,
+    materialRows: reviveRows<MaterialRowDraft>(
+      stored.materialRows,
+      "material",
+      { quantity: "1", unitCost: "" },
+      fallback.materialRows,
+    ),
+    otherCostRows: reviveRows<OtherCostRowDraft>(
+      stored.otherCostRows,
+      "other",
+      { description: "", amount: "" },
+      fallback.otherCostRows,
+    ),
     annualBusinessCosts: text(stored.annualBusinessCosts, ""),
     annualSellableHours: text(stored.annualSellableHours, ""),
     manualJobHours: text(stored.manualJobHours, ""),

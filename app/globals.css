@@ -264,12 +264,6 @@ button {
   gap: 18px;
 }
 
-@media (min-width: 620px) {
-  .field-grid.two {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 .field {
   display: flex;
   flex-direction: column;
@@ -294,8 +288,7 @@ button {
   line-height: 1.45;
 }
 
-.field input,
-.field select {
+.field input {
   font: inherit;
   color: var(--ink);
   background: #fff;
@@ -306,8 +299,7 @@ button {
   min-width: 0;
 }
 
-.field input:hover,
-.field select:hover {
+.field input:hover {
   border-color: #b8a68d;
 }
 
@@ -421,7 +413,7 @@ button {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .row-grid.two-up {
+  .two-up {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -555,6 +547,16 @@ button {
   margin-top: 18px;
 }
 
+.choice-help {
+  margin-top: 10px;
+}
+
+.breakdown-basis {
+  margin-top: 12px;
+  font-size: 0.86rem;
+  color: var(--ink-faint);
+}
+
 /* ---------- buttons ---------- */
 
 .btn {
@@ -657,9 +659,6 @@ button {
   padding: 24px;
 }
 
-.results-mobile-anchor {
-  scroll-margin-top: 16px;
-}
 
 .headline-price {
   border-bottom: 1px solid var(--line);

@@ -12,37 +12,44 @@ interface BaseFieldProps {
   placeholder?: string;
 }
 
-function describedBy(helpId: string | null, errorId: string | null): string | undefined {
-  const ids = [helpId, errorId].filter(Boolean);
-  return ids.length > 0 ? ids.join(" ") : undefined;
+interface ControlProps {
+  id: string;
+  describedBy: string | undefined;
+  invalid: true | undefined;
 }
 
-export function TextField({ label, value, onChange, help, error, optional, placeholder }: BaseFieldProps) {
+interface FieldShellProps {
+  label: string;
+  help?: string;
+  error?: string;
+  optional?: boolean;
+  children: (control: ControlProps) => React.ReactNode;
+}
+
+/**
+ * Owns everything every field shares: the generated id, the label, the help
+ * text, the error message, and the wiring that ties them together for screen
+ * readers. Each field type only has to render its own control.
+ */
+function FieldShell({ label, help, error, optional, children }: FieldShellProps) {
   const id = useId();
-  const helpId = help ? `${id}-help` : null;
-  const errorId = error ? `${id}-error` : null;
+  const helpId = help ? `${id}-help` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [helpId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className="field">
       <label htmlFor={id}>
         {label} {optional ? <span className="optional">(optional)</span> : null}
       </label>
-      <input
-        id={id}
-        type="text"
-        value={value}
-        placeholder={placeholder}
-        aria-describedby={describedBy(helpId, errorId)}
-        aria-invalid={error ? true : undefined}
-        onChange={(event) => onChange(event.target.value)}
-      />
+      {children({ id, describedBy, invalid: error ? true : undefined })}
       {help ? (
-        <span className="help" id={helpId ?? undefined}>
+        <span className="help" id={helpId}>
           {help}
         </span>
       ) : null}
       {error ? (
-        <span className="field-error" id={errorId ?? undefined} role="alert">
+        <span className="field-error" id={errorId} role="alert">
           {error}
         </span>
       ) : null}
@@ -50,11 +57,28 @@ export function TextField({ label, value, onChange, help, error, optional, place
   );
 }
 
+export function TextField({ label, value, onChange, help, error, optional, placeholder }: BaseFieldProps) {
+  return (
+    <FieldShell label={label} help={help} error={error} optional={optional}>
+      {({ id, describedBy, invalid }) => (
+        <input
+          id={id}
+          type="text"
+          value={value}
+          placeholder={placeholder}
+          aria-describedby={describedBy}
+          aria-invalid={invalid}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      )}
+    </FieldShell>
+  );
+}
+
 interface NumberFieldProps extends BaseFieldProps {
   prefix?: string;
   suffix?: string;
   step?: string;
-  min?: string;
 }
 
 export function NumberField({
@@ -68,94 +92,46 @@ export function NumberField({
   prefix,
   suffix,
   step = "any",
-  min = "0",
 }: NumberFieldProps) {
-  const id = useId();
-  const helpId = help ? `${id}-help` : null;
-  const errorId = error ? `${id}-error` : null;
-
-  const input = (
-    <input
-      id={id}
-      type="number"
-      inputMode="decimal"
-      step={step}
-      min={min}
-      value={value}
-      placeholder={placeholder}
-      aria-describedby={describedBy(helpId, errorId)}
-      aria-invalid={error ? true : undefined}
-      onChange={(event) => onChange(event.target.value)}
-    />
-  );
-
-  const wrapperClass = prefix ? "input-with-prefix" : "input-with-suffix";
-
   return (
-    <div className="field">
-      <label htmlFor={id}>
-        {label} {optional ? <span className="optional">(optional)</span> : null}
-      </label>
-      {prefix || suffix ? (
-        <div className={`${wrapperClass}${error ? " invalid" : ""}`}>
-          {prefix ? <span className="affix" aria-hidden="true">{prefix}</span> : null}
-          {input}
-          {suffix ? <span className="affix" aria-hidden="true">{suffix}</span> : null}
-        </div>
-      ) : (
-        input
-      )}
-      {help ? (
-        <span className="help" id={helpId ?? undefined}>
-          {help}
-        </span>
-      ) : null}
-      {error ? (
-        <span className="field-error" id={errorId ?? undefined} role="alert">
-          {error}
-        </span>
-      ) : null}
-    </div>
-  );
-}
+    <FieldShell label={label} help={help} error={error} optional={optional}>
+      {({ id, describedBy, invalid }) => {
+        const input = (
+          <input
+            id={id}
+            type="number"
+            inputMode="decimal"
+            step={step}
+            min="0"
+            value={value}
+            placeholder={placeholder}
+            aria-describedby={describedBy}
+            aria-invalid={invalid}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        );
 
-interface SelectFieldProps extends Omit<BaseFieldProps, "placeholder"> {
-  options: { value: string; label: string }[];
-}
+        if (!prefix && !suffix) return input;
 
-export function SelectField({ label, value, onChange, options, help, error, optional }: SelectFieldProps) {
-  const id = useId();
-  const helpId = help ? `${id}-help` : null;
-  const errorId = error ? `${id}-error` : null;
-
-  return (
-    <div className="field">
-      <label htmlFor={id}>
-        {label} {optional ? <span className="optional">(optional)</span> : null}
-      </label>
-      <select
-        id={id}
-        value={value}
-        aria-describedby={describedBy(helpId, errorId)}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {help ? (
-        <span className="help" id={helpId ?? undefined}>
-          {help}
-        </span>
-      ) : null}
-      {error ? (
-        <span className="field-error" id={errorId ?? undefined} role="alert">
-          {error}
-        </span>
-      ) : null}
-    </div>
+        return (
+          <div
+            className={`${prefix ? "input-with-prefix" : "input-with-suffix"}${invalid ? " invalid" : ""}`}
+          >
+            {prefix ? (
+              <span className="affix" aria-hidden="true">
+                {prefix}
+              </span>
+            ) : null}
+            {input}
+            {suffix ? (
+              <span className="affix" aria-hidden="true">
+                {suffix}
+              </span>
+            ) : null}
+          </div>
+        );
+      }}
+    </FieldShell>
   );
 }
 

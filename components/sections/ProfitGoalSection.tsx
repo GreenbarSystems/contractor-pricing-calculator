@@ -35,11 +35,11 @@ export function ProfitGoalSection({ draft, update, errors }: Props) {
         ))}
       </fieldset>
 
-      <p className="help" id="profit-goal-help" style={{ marginTop: 10 }}>
+      <p className="help choice-help" id="profit-goal-help">
         {customerLanguage.targetProfit.help} Pick one of these or type your own below.
       </p>
 
-      <div className="field-grid two" style={{ marginTop: 20 }}>
+      <div className="field-grid two-up spaced-top">
         <NumberField
           label="Or set your own profit goal"
           suffix="%"

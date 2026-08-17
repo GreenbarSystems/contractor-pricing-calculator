@@ -84,9 +84,7 @@ export function PricingCalculator() {
 
       <div className="results-rail">
         <h2 className="visually-hidden">Your price</h2>
-        <div className="results-mobile-anchor">
-          <ResultsPanel input={input} result={result} issues={validation.issues} />
-        </div>
+        <ResultsPanel input={input} result={result} issues={validation.issues} />
       </div>
 
       {/* Phone-only running total. The full panel below already announces this,
