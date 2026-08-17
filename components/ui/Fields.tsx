@@ -114,9 +114,7 @@ export function NumberField({
         if (!prefix && !suffix) return input;
 
         return (
-          <div
-            className={`${prefix ? "input-with-prefix" : "input-with-suffix"}${invalid ? " invalid" : ""}`}
-          >
+          <div className={`input-affix${invalid ? " invalid" : ""}`}>
             {prefix ? (
               <span className="affix" aria-hidden="true">
                 {prefix}

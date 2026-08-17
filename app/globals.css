@@ -22,6 +22,25 @@
   --radius: 12px;
   --radius-lg: 18px;
   --shadow-card: 0 1px 2px rgba(36, 31, 26, 0.06), 0 8px 24px rgba(36, 31, 26, 0.05);
+
+  /* Surfaces that sit on top of a card rather than on the page. */
+  --sunken: #fdfbf7;
+  --affix: #f6f1e9;
+  --line-hover: #b8a68d;
+
+  /* Good / warning / trouble, as used by the status card and the scenario
+     tags. The tags use a deeper fill so they stay legible when small. */
+  --good-line: #a9c9b4;
+  --good-tag: #d7e8dd;
+  --warn-line: #e3b98d;
+  --warn-tag: #f7e0c8;
+  --warn-ink: #7d3a08;
+  --callout-ink: #6f3608;
+  --bad-line: #e0a29d;
+  --bad-tag: #f6d8d5;
+
+  /* Muted text on the dark green phone bar. */
+  --on-green: #cfe0d5;
 }
 
 * {
@@ -60,7 +79,11 @@ button {
 
 /* ---------- focus ---------- */
 
-:focus-visible {
+/* One focus ring. The affix wrapper takes it on behalf of the input inside it,
+   and the profit pills take it on behalf of their visually hidden radio. */
+:focus-visible,
+.input-affix:focus-within,
+.choice input:focus-visible + span {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
@@ -93,6 +116,52 @@ button {
   border: 0;
 }
 
+/* ---------- shared primitives ---------- */
+
+/* Every raised surface on the page. The dashed .optional-section variant and
+   the small-screen padding override both come later, so they still win. */
+.section,
+.results,
+.job-name-bar {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.section,
+.results {
+  padding: 24px;
+}
+
+/* Small uppercase labels. Size, tracking, and colour stay per-use; only what
+   is genuinely the same everywhere lives here. */
+.eyebrow,
+.section-step,
+.row-card-title,
+.group-title,
+.optional-tag,
+.scenario-tag {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.eyebrow,
+.optional-tag,
+.scenario-tag {
+  border-radius: 999px;
+}
+
+/* The amber read-this block, used for hints and for engine warnings. */
+.soft-hint,
+.warning-list li {
+  background: var(--amber-soft);
+  border-left: 4px solid var(--amber);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 11px 14px;
+  color: var(--callout-ink);
+}
+
 /* ---------- page frame ---------- */
 
 .page {
@@ -109,13 +178,10 @@ button {
 .eyebrow {
   display: inline-block;
   font-size: 0.8rem;
-  font-weight: 700;
   letter-spacing: 0.09em;
-  text-transform: uppercase;
   color: var(--green);
   background: var(--green-soft);
   padding: 6px 12px;
-  border-radius: 999px;
   margin-bottom: 18px;
 }
 
@@ -189,7 +255,7 @@ button {
 .mobile-price-label {
   font-size: 0.86rem;
   font-weight: 650;
-  color: #cfe0d5;
+  color: var(--on-green);
 }
 
 .mobile-price-amount {
@@ -214,11 +280,6 @@ button {
 /* ---------- sections ---------- */
 
 .section {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 24px;
   margin: 0;
   min-width: 0;
 }
@@ -238,9 +299,7 @@ button {
 
 .section-step {
   font-size: 0.78rem;
-  font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--amber);
 }
 
@@ -300,7 +359,7 @@ button {
 }
 
 .field input:hover {
-  border-color: #b8a68d;
+  border-color: var(--line-hover);
 }
 
 .field input[aria-invalid="true"] {
@@ -314,8 +373,7 @@ button {
   color: var(--red);
 }
 
-.input-with-prefix,
-.input-with-suffix {
+.input-affix {
   display: flex;
   align-items: stretch;
   border: 1.5px solid var(--line-strong);
@@ -324,50 +382,41 @@ button {
   overflow: hidden;
 }
 
-.input-with-prefix:focus-within,
-.input-with-suffix:focus-within {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.input-with-prefix.invalid,
-.input-with-suffix.invalid {
+.input-affix.invalid {
   border-color: var(--red);
 }
 
-.input-with-prefix .affix,
-.input-with-suffix .affix {
+.input-affix .affix {
   display: flex;
   align-items: center;
   padding: 0 12px;
-  background: #f6f1e9;
+  background: var(--affix);
   color: var(--ink-soft);
   font-weight: 650;
   font-size: 0.95rem;
 }
 
-.input-with-prefix .affix {
+/* A prefix renders before the input and a suffix after it, so the divider
+   follows DOM order and no modifier class is needed. */
+.input-affix .affix:first-child {
   border-right: 1.5px solid var(--line);
 }
 
-.input-with-suffix .affix {
+.input-affix .affix:last-child {
   border-left: 1.5px solid var(--line);
 }
 
-.input-with-prefix input,
-.input-with-suffix input {
+.input-affix input {
   border: 0;
   border-radius: 0;
   flex: 1 1 auto;
 }
 
-.input-with-prefix input:focus-visible,
-.input-with-suffix input:focus-visible {
+.input-affix input:focus-visible {
   outline: none;
 }
 
-.input-with-prefix input[aria-invalid="true"],
-.input-with-suffix input[aria-invalid="true"] {
+.input-affix input[aria-invalid="true"] {
   background: var(--red-soft);
 }
 
@@ -383,7 +432,7 @@ button {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 16px;
-  background: #fdfbf7;
+  background: var(--sunken);
 }
 
 .row-card-head {
@@ -394,11 +443,10 @@ button {
   margin-bottom: 14px;
 }
 
-.row-card-title {
-  font-weight: 700;
+.row-card-title,
+.group-title {
   font-size: 0.85rem;
   letter-spacing: 0.07em;
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -466,7 +514,7 @@ button {
 
 .optional-section {
   border-style: dashed;
-  background: #fdfbf7;
+  background: var(--sunken);
 }
 
 .optional-section .disclosure {
@@ -484,13 +532,10 @@ button {
 
 .optional-tag {
   font-size: 0.72rem;
-  font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--amber);
   background: var(--amber-soft);
   padding: 4px 10px;
-  border-radius: 999px;
 }
 
 .optional-summary-title {
@@ -501,21 +546,12 @@ button {
 
 .soft-hint {
   margin-top: 14px;
-  background: var(--amber-soft);
-  border-left: 4px solid var(--amber);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  padding: 11px 14px;
   font-size: 0.9rem;
-  color: #6f3608;
 }
 
 /* ---------- slim job name line ---------- */
 
 .job-name-bar {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
   padding: 18px 24px;
 }
 
@@ -526,11 +562,6 @@ button {
 }
 
 .group-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
   margin-bottom: 6px;
 }
 
@@ -644,20 +675,7 @@ button {
   color: #fff;
 }
 
-.choice input:focus-visible + span {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-
 /* ---------- results ---------- */
-
-.results {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 24px;
-}
 
 
 .headline-price {
@@ -735,31 +753,38 @@ button {
 
 .status-good {
   background: var(--green-soft);
-  border-color: #a9c9b4;
+  border-color: var(--good-line);
   color: var(--green-deep);
 }
 
 .status-warn {
   background: var(--amber-soft);
-  border-color: #e3b98d;
-  color: #7d3a08;
+  border-color: var(--warn-line);
+  color: var(--warn-ink);
 }
 
 .status-bad {
   background: var(--red-soft);
-  border-color: #e0a29d;
+  border-color: var(--bad-line);
   color: var(--red);
 }
 
 .status-neutral {
-  background: #f6f1e9;
+  background: var(--affix);
   border-color: var(--line-strong);
   color: var(--ink-soft);
 }
 
-.breakdown {
+.breakdown,
+.scenarios,
+.warnings {
   border-top: 1px solid var(--line);
   padding-top: 18px;
+}
+
+.scenarios,
+.warnings {
+  margin-top: 18px;
 }
 
 .breakdown h3,
@@ -814,12 +839,6 @@ button {
   font-size: 1rem;
 }
 
-.scenarios {
-  border-top: 1px solid var(--line);
-  padding-top: 18px;
-  margin-top: 18px;
-}
-
 .table-scroll {
   overflow-x: auto;
 }
@@ -864,32 +883,23 @@ button {
 .scenario-tag {
   display: inline-block;
   font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 2px 8px;
-  border-radius: 999px;
 }
 
 .tag-good {
-  background: #d7e8dd;
+  background: var(--good-tag);
   color: var(--green-deep);
 }
 
 .tag-warn {
-  background: #f7e0c8;
-  color: #7d3a08;
+  background: var(--warn-tag);
+  color: var(--warn-ink);
 }
 
 .tag-bad {
-  background: #f6d8d5;
+  background: var(--bad-tag);
   color: var(--red);
-}
-
-.warnings {
-  border-top: 1px solid var(--line);
-  padding-top: 18px;
-  margin-top: 18px;
 }
 
 .warning-list {
@@ -902,12 +912,7 @@ button {
 }
 
 .warning-list li {
-  background: var(--amber-soft);
-  border-left: 4px solid var(--amber);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  padding: 11px 14px;
   font-size: 0.92rem;
-  color: #6f3608;
 }
 
 .blocked {
