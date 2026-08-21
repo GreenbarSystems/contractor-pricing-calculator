@@ -52,7 +52,7 @@ export function ResultsPanel({ input, result, issues }: Props) {
     );
   }
 
-  const quotedPriceEntered = result.proposedPrice !== undefined;
+  const quotedPrice = result.proposedPrice;
   const status = proposedPriceMessages[result.proposedPriceStatus];
   const visibleWarnings = result.warnings.filter((warning) => warning.code !== "NO_PROPOSED_PRICE");
 
@@ -91,13 +91,13 @@ export function ResultsPanel({ input, result, issues }: Props) {
         </div>
       </div>
 
-      {quotedPriceEntered ? (
+      {quotedPrice !== undefined ? (
         <div className={`status-card ${statusClass[result.proposedPriceStatus]}`} role="status">
           <p className="status-title">{status.title}</p>
           <p className="status-detail">{status.detail}</p>
           {result.proposedProfit !== undefined ? (
             <p className="status-detail">
-              At {formatCurrency(result.proposedPrice)} you keep{" "}
+              At {formatCurrency(quotedPrice)} you keep{" "}
               <strong>{formatCurrency(result.proposedProfit)}</strong>
               {result.proposedProfitRate !== undefined
                 ? ` (${formatPercent(result.proposedProfitRate)} of the price)`
