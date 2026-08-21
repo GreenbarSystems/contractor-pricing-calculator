@@ -196,12 +196,36 @@ export function totalCrewHours(draft: CalculatorDraft): number {
 }
 
 /**
+ * Engine messages still use older field names. The form shows these labels, so
+ * errors are rewritten here rather than changing validation or formulas.
+ */
+const ENGINE_LABEL_TO_VISIBLE: ReadonlyArray<readonly [string, string]> = [
+  ["Hourly wage", "Hourly pay"],
+  ["Regular hours", "Hours each"],
+  ["Material quantity", "How many"],
+  ["Overtime multiplier", "Paid at this many times the hourly pay"],
+];
+
+export function toVisibleIssueMessage(message: string): string {
+  return ENGINE_LABEL_TO_VISIBLE.reduce(
+    (text, [engineLabel, visibleLabel]) => text.replaceAll(engineLabel, visibleLabel),
+    message,
+  );
+}
+
+export function withVisibleIssueMessages(
+  issues: ValidationResult["issues"],
+): ValidationResult["issues"] {
+  return issues.map((issue) => ({ ...issue, message: toVisibleIssueMessage(issue.message) }));
+}
+
+/**
  * The engine reports issues by path (for example `laborItems.0.hourlyWage`).
  * The form looks messages up by that same path to place them under a field.
  */
 export function issuesByPath(validation: ValidationResult): Map<string, string> {
   const map = new Map<string, string>();
-  for (const issue of validation.issues) {
+  for (const issue of withVisibleIssueMessages(validation.issues)) {
     if (!map.has(issue.path)) {
       map.set(issue.path, issue.message);
     }

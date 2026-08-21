@@ -1,6 +1,6 @@
 "use client";
 
-import { Disclosure, NumberField, Section } from "../ui/Fields.js";
+import { Disclosure, NumberField, Section, useFocusAddedRow } from "../ui/Fields.js";
 import { createLaborRow, type CalculatorDraft, type LaborRowDraft } from "../../lib/calculatorState.js";
 import { customerLanguage } from "../../src/pricing/index.js";
 
@@ -18,7 +18,13 @@ export function CrewSection({ draft, update, errors, crewHours }: Props) {
     });
   };
 
-  const addRow = () => update({ laborRows: [...draft.laborRows, createLaborRow()] });
+  const focusAddedRow = useFocusAddedRow();
+
+  const addRow = () => {
+    const row = createLaborRow();
+    update({ laborRows: [...draft.laborRows, row] });
+    focusAddedRow(row.id);
+  };
 
   const removeRow = (index: number) =>
     update({ laborRows: draft.laborRows.filter((_, rowIndex) => rowIndex !== index) });
@@ -39,7 +45,7 @@ export function CrewSection({ draft, update, errors, crewHours }: Props) {
           const hasOvertime = row.overtimeHours.trim() !== "" && Number(row.overtimeHours) > 0;
 
           return (
-            <div className="row-card" key={row.id}>
+            <div className="row-card" key={row.id} id={row.id}>
               {draft.laborRows.length > 1 ? (
                 <div className="row-card-head">
                   <span className="row-card-title">Crew line {index + 1}</span>
@@ -115,7 +121,7 @@ export function CrewSection({ draft, update, errors, crewHours }: Props) {
           <>
             {customerLanguage.extraWageCosts.label}:{" "}
             <strong>{draft.extraWageCostPercent.trim() === "" ? "0" : draft.extraWageCostPercent}%</strong>{" "}
-            of crew pay
+            of crew pay — 28% is a starting point
           </>
         }
       >

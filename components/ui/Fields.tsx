@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 interface BaseFieldProps {
   label: string;
@@ -10,6 +10,8 @@ interface BaseFieldProps {
   error?: string;
   optional?: boolean;
   placeholder?: string;
+  autoComplete?: string;
+  autoFocus?: boolean;
 }
 
 interface ControlProps {
@@ -57,7 +59,17 @@ function FieldShell({ label, help, error, optional, children }: FieldShellProps)
   );
 }
 
-export function TextField({ label, value, onChange, help, error, optional, placeholder }: BaseFieldProps) {
+export function TextField({
+  label,
+  value,
+  onChange,
+  help,
+  error,
+  optional,
+  placeholder,
+  autoComplete,
+  autoFocus,
+}: BaseFieldProps) {
   return (
     <FieldShell label={label} help={help} error={error} optional={optional}>
       {({ id, describedBy, invalid }) => (
@@ -66,6 +78,8 @@ export function TextField({ label, value, onChange, help, error, optional, place
           type="text"
           value={value}
           placeholder={placeholder}
+          autoComplete={autoComplete}
+          autoFocus={autoFocus}
           aria-describedby={describedBy}
           aria-invalid={invalid}
           onChange={(event) => onChange(event.target.value)}
@@ -92,6 +106,7 @@ export function NumberField({
   prefix,
   suffix,
   step = "any",
+  autoFocus,
 }: NumberFieldProps) {
   return (
     <FieldShell label={label} help={help} error={error} optional={optional}>
@@ -105,6 +120,7 @@ export function NumberField({
             min="0"
             value={value}
             placeholder={placeholder}
+            autoFocus={autoFocus}
             aria-describedby={describedBy}
             aria-invalid={invalid}
             onChange={(event) => onChange(event.target.value)}
@@ -161,6 +177,20 @@ interface DisclosureProps {
   forceOpen?: boolean;
   children: React.ReactNode;
   className?: string;
+}
+
+/** Focuses the first field of a row after it is added to the list. */
+export function useFocusAddedRow() {
+  const [rowId, setRowId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!rowId) return;
+    const row = document.getElementById(rowId);
+    row?.querySelector<HTMLInputElement>("input")?.focus();
+    setRowId(null);
+  }, [rowId]);
+
+  return setRowId;
 }
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { NumberField, Section, TextField } from "../ui/Fields.js";
+import { NumberField, Section, TextField, useFocusAddedRow } from "../ui/Fields.js";
 import {
   createMaterialRow,
   createOtherCostRow,
@@ -17,6 +17,8 @@ interface Props {
 }
 
 export function PurchasesSection({ draft, update, errors }: Props) {
+  const focusAddedRow = useFocusAddedRow();
+
   const setMaterial = (index: number, patch: Partial<MaterialRowDraft>) => {
     update({
       materialRows: draft.materialRows.map((row, rowIndex) =>
@@ -44,7 +46,7 @@ export function PurchasesSection({ draft, update, errors }: Props) {
 
       <div className="row-list">
         {draft.materialRows.map((row, index) => (
-          <div className="row-card" key={row.id}>
+          <div className="row-card" key={row.id} id={row.id}>
             {draft.materialRows.length > 1 ? (
               <div className="row-card-head">
                 <span className="row-card-title">Material {index + 1}</span>
@@ -62,6 +64,7 @@ export function PurchasesSection({ draft, update, errors }: Props) {
             <div className="row-grid two-up">
               <NumberField
                 label="How many"
+                optional
                 value={row.quantity}
                 onChange={(value) => setMaterial(index, { quantity: value })}
                 error={errors.get(`materialItems.${index}.quantity`)}
@@ -82,7 +85,11 @@ export function PurchasesSection({ draft, update, errors }: Props) {
       <button
         type="button"
         className="btn btn-add"
-        onClick={() => update({ materialRows: [...draft.materialRows, createMaterialRow()] })}
+        onClick={() => {
+          const row = createMaterialRow();
+          update({ materialRows: [...draft.materialRows, row] });
+          focusAddedRow(row.id);
+        }}
       >
         + Add another material
       </button>
@@ -93,7 +100,7 @@ export function PurchasesSection({ draft, update, errors }: Props) {
       {draft.otherCostRows.length > 0 ? (
         <div className="row-list">
           {draft.otherCostRows.map((row, index) => (
-            <div className="row-card" key={row.id}>
+            <div className="row-card" key={row.id} id={row.id}>
               <div className="row-card-head">
                 <span className="row-card-title">Other cost {index + 1}</span>
                 <button
@@ -130,7 +137,11 @@ export function PurchasesSection({ draft, update, errors }: Props) {
       <button
         type="button"
         className="btn btn-add"
-        onClick={() => update({ otherCostRows: [...draft.otherCostRows, createOtherCostRow()] })}
+        onClick={() => {
+          const row = createOtherCostRow();
+          update({ otherCostRows: [...draft.otherCostRows, row] });
+          focusAddedRow(row.id);
+        }}
       >
         + Add a permit, rental, subcontractor, or dump fee
       </button>
