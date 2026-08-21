@@ -8,9 +8,9 @@
   --card: #ffffff;
   --ink: #241f1a;
   --ink-soft: #5c5248;
-  --ink-faint: #7d7268;
+  --ink-faint: #6f655c;
   --line: #e4dacb;
-  --line-strong: #cdbfab;
+  --line-strong: #9a8f80;
   --green: #1f5136;
   --green-deep: #163c28;
   --green-soft: #eaf2ec;
@@ -26,7 +26,7 @@
   /* Surfaces that sit on top of a card rather than on the page. */
   --sunken: #fdfbf7;
   --affix: #f6f1e9;
-  --line-hover: #b8a68d;
+  --line-hover: #7f7468;
 
   /* Good / warning / trouble, as used by the status card and the scenario
      tags. The tags use a deeper fill so they stay legible when small. */
@@ -86,6 +86,12 @@ button {
 .choice input:focus-visible + span {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
+}
+
+/* Skip-link target. Keep it out of the tab order (tabindex=-1) and only
+   show the ring when the skip link actually sent focus here. */
+.layout:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .skip-link {
@@ -533,7 +539,7 @@ button {
 .optional-tag {
   font-size: 0.72rem;
   letter-spacing: 0.08em;
-  color: var(--amber);
+  color: var(--callout-ink);
   background: var(--amber-soft);
   padding: 4px 10px;
 }

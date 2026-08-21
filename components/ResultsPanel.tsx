@@ -52,7 +52,9 @@ export function ResultsPanel({ input, result, issues }: Props) {
     );
   }
 
+  const quotedPriceEntered = result.proposedPrice !== undefined;
   const status = proposedPriceMessages[result.proposedPriceStatus];
+  const visibleWarnings = result.warnings.filter((warning) => warning.code !== "NO_PROPOSED_PRICE");
 
   const breakdown: { name: string; amount: number }[] = [
     { name: customerLanguage.laborPay.label, amount: result.laborPay },
@@ -65,8 +67,10 @@ export function ResultsPanel({ input, result, issues }: Props) {
   return (
     <div className="results">
       <div className="headline-price">
-        <p className="label">{customerLanguage.recommendedPrice.label}</p>
-        <p className="amount">{formatCurrency(result.recommendedPrice)}</p>
+        <div aria-live="polite" aria-atomic="true">
+          <h2 className="label">{customerLanguage.recommendedPrice.label}</h2>
+          <p className="amount">{formatCurrency(result.recommendedPrice)}</p>
+        </div>
         <p className="explain">
           This covers the costs you entered and leaves your chosen profit on the job.
         </p>
@@ -87,20 +91,22 @@ export function ResultsPanel({ input, result, issues }: Props) {
         </div>
       </div>
 
-      <div className={`status-card ${statusClass[result.proposedPriceStatus]}`} role="status">
-        <p className="status-title">{status.title}</p>
-        <p className="status-detail">{status.detail}</p>
-        {result.proposedPrice !== undefined && result.proposedProfit !== undefined ? (
-          <p className="status-detail">
-            At {formatCurrency(result.proposedPrice)} you keep{" "}
-            <strong>{formatCurrency(result.proposedProfit)}</strong>
-            {result.proposedProfitRate !== undefined
-              ? ` (${formatPercent(result.proposedProfitRate)} of the price)`
-              : null}
-            .
-          </p>
-        ) : null}
-      </div>
+      {quotedPriceEntered ? (
+        <div className={`status-card ${statusClass[result.proposedPriceStatus]}`} role="status">
+          <p className="status-title">{status.title}</p>
+          <p className="status-detail">{status.detail}</p>
+          {result.proposedProfit !== undefined ? (
+            <p className="status-detail">
+              At {formatCurrency(result.proposedPrice)} you keep{" "}
+              <strong>{formatCurrency(result.proposedProfit)}</strong>
+              {result.proposedProfitRate !== undefined
+                ? ` (${formatPercent(result.proposedProfitRate)} of the price)`
+                : null}
+              .
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="breakdown">
         <h3>Where the money goes</h3>
@@ -129,11 +135,11 @@ export function ResultsPanel({ input, result, issues }: Props) {
 
       <ScenarioTable input={input} result={result} />
 
-      {result.warnings.length > 0 ? (
+      {visibleWarnings.length > 0 ? (
         <div className="warnings">
           <h3>Worth knowing</h3>
           <ul className="warning-list">
-            {result.warnings.map((warning) => (
+            {visibleWarnings.map((warning) => (
               <li key={warning.code}>{warning.message}</li>
             ))}
           </ul>

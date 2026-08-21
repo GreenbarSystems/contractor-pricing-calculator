@@ -24,7 +24,10 @@ interface Props {
  */
 export function BusinessCostsSection({ draft, update, errors, crewHours }: Props) {
   return (
-    <section className="section optional-section">
+    <section className="section optional-section" aria-labelledby="business-costs-heading">
+      <h2 id="business-costs-heading" className="visually-hidden">
+        {customerLanguage.businessCosts.label}
+      </h2>
       <Disclosure
         forceOpen={businessCostsStarted(draft)}
         summary={

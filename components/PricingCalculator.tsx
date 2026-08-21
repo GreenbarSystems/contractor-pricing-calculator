@@ -15,6 +15,7 @@ import {
   loadDraft,
   saveDraft,
   totalCrewHours,
+  withVisibleIssueMessages,
   type CalculatorDraft,
 } from "../lib/calculatorState.js";
 import {
@@ -30,10 +31,14 @@ export function PricingCalculator() {
   // The first paint has to match the server, so a saved draft is applied after
   // mount rather than read during render.
   const [restored, setRestored] = useState(false);
+  const [draftWasRestored, setDraftWasRestored] = useState(false);
 
   useEffect(() => {
     const stored = loadDraft();
-    if (stored) setDraft(stored);
+    if (stored) {
+      setDraft(stored);
+      setDraftWasRestored(true);
+    }
     setRestored(true);
   }, []);
 
@@ -62,12 +67,13 @@ export function PricingCalculator() {
     if (typeof window !== "undefined" && !window.confirm("Clear this job and start over?")) return;
     clearDraft();
     setDraft(createEmptyDraft());
+    setDraftWasRestored(false);
   };
 
   return (
-    <div className="layout" id="calculator">
+    <div className="layout" id="calculator" tabIndex={-1}>
       <div className="form-column">
-        <JobNameField draft={draft} update={update} />
+        <JobNameField draft={draft} update={update} restored={draftWasRestored} />
         <CrewSection draft={draft} update={update} errors={errors} crewHours={crewHours} />
         <PurchasesSection draft={draft} update={update} errors={errors} />
         <ProfitGoalSection draft={draft} update={update} errors={errors} />
@@ -83,8 +89,7 @@ export function PricingCalculator() {
       </div>
 
       <div className="results-rail">
-        <h2 className="visually-hidden">Your price</h2>
-        <ResultsPanel input={input} result={result} issues={validation.issues} />
+        <ResultsPanel input={input} result={result} issues={withVisibleIssueMessages(validation.issues)} />
       </div>
 
       {/* Phone-only running total. The full panel below already announces this,
@@ -95,6 +100,8 @@ export function PricingCalculator() {
             <span className="mobile-price-label">{customerLanguage.recommendedPrice.label}</span>
             <span className="mobile-price-amount">{formatCurrency(result.recommendedPrice)}</span>
           </>
+        ) : result === null ? (
+          <span className="mobile-price-label">A few numbers need a second look</span>
         ) : (
           <span className="mobile-price-label">Your price appears here as you fill this in</span>
         )}

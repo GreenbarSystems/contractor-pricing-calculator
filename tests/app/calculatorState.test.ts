@@ -8,6 +8,7 @@ import {
   issuesByPath,
   reviveDraft,
   totalCrewHours,
+  toVisibleIssueMessage,
   type CalculatorDraft,
 } from "../../lib/calculatorState.js";
 import { calculateJobPrice, validateJobPricingInput } from "../../src/pricing/index.js";
@@ -159,6 +160,42 @@ describe("validation surfaced to the form", () => {
     );
 
     expect(issuesByPath(validation).has("targetProfitRate")).toBe(true);
+  });
+
+  it("maps engine field names to the labels shown on the form", () => {
+    expect(toVisibleIssueMessage("Hourly wage must be a number that is zero or greater.")).toBe(
+      "Hourly pay must be a number that is zero or greater.",
+    );
+    expect(toVisibleIssueMessage("Regular hours must be a number that is zero or greater.")).toBe(
+      "Hours each must be a number that is zero or greater.",
+    );
+    expect(toVisibleIssueMessage("Material quantity must be a number that is zero or greater.")).toBe(
+      "How many must be a number that is zero or greater.",
+    );
+    expect(toVisibleIssueMessage("Overtime multiplier must be greater than zero.")).toBe(
+      "Paid at this many times the hourly pay must be greater than zero.",
+    );
+  });
+
+  it("shows those visible labels on the paths the form looks up", () => {
+    const draft = filledDraft();
+    const validation = validateJobPricingInput(
+      draftToPricingInput({
+        ...draft,
+        laborRows: [
+          { ...draft.laborRows[0]!, hourlyWage: "-5", regularHours: "-1", overtimeMultiplier: "0" },
+        ],
+        materialRows: [{ ...draft.materialRows[0]!, quantity: "-1" }],
+      }),
+    );
+    const errors = issuesByPath(validation);
+
+    expect(errors.get("laborItems.0.hourlyWage")).toContain("Hourly pay");
+    expect(errors.get("laborItems.0.regularHoursPerWorker")).toContain("Hours each");
+    expect(errors.get("laborItems.0.overtimeMultiplier")).toContain(
+      "Paid at this many times the hourly pay",
+    );
+    expect(errors.get("materialItems.0.quantity")).toContain("How many");
   });
 });
 
