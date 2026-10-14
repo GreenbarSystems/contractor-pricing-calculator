@@ -1,0 +1,14 @@
+{
+  "repo": {
+    "full_name": "demo/app",
+    "html_url": "https://github.com/demo/app",
+    "private": false,
+    "default_branch": "main"
+  },
+  "branchProtection": {
+    "required_pull_request_reviews": { "required_approving_review_count": 0 },
+    "required_status_checks": { "contexts": [] },
+    "allow_merge_commit": true
+  },
+  "pull": null
+}
