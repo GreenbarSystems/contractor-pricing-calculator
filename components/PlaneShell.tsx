@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { copy } from "../host/copy.js";
+import { applyPlaneDraft, collectPlaneDraft } from "../lib/planeBridge.js";
 
 type Link = { noun: string; label: string; url: string };
 type Row =
@@ -37,7 +38,13 @@ type View = {
     | { kind: "theirs"; waitingOn: { kind: string }[]; share: Link };
 };
 
-type Payload = { view?: View; thread?: { id: string; prompt: string; note: string }[]; error?: string; copy?: typeof copy };
+type Payload = {
+  view?: View;
+  thread?: { id: string; prompt: string; note: string }[];
+  error?: string;
+  copy?: typeof copy;
+  preview?: unknown;
+};
 
 export function PlaneShell({ children }: { children: ReactNode }) {
   const [data, setData] = useState<Payload | null>(null);
@@ -45,32 +52,58 @@ export function PlaneShell({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const take = async (res: Response) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text) as Payload;
+    } catch {
+      throw new Error(text.trim().slice(0, 200) || "The host did not answer.");
+    }
+  };
+
   const reload = async () => {
     const res = await fetch("/api/plane/view");
-    const json = (await res.json()) as Payload;
+    const json = await take(res);
     setData(json);
+    applyPlaneDraft(json.preview);
     if (!res.ok) setError(json.error ?? copy.notLinked);
+    else setError(null);
   };
 
   useEffect(() => {
-    void reload();
+    void reload().catch((caught: unknown) => {
+      setError(caught instanceof Error ? caught.message : copy.cannotPush);
+    });
   }, []);
 
   const post = async (url: string, body: unknown) => {
     setBusy(true);
     setError(null);
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 60_000);
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: ac.signal,
       });
-      const json = (await res.json()) as Payload;
-      if (!res.ok) setError(json.error ?? "That did not work.");
-      setData(json.view ? json : await (await fetch("/api/plane/view")).json());
+      const json = await take(res);
+      if (!res.ok) {
+        setError(json.error ?? "That did not work.");
+        return;
+      }
+      if (url.endsWith("/prompt")) setPrompt("");
+      setData(json.view ? json : await take(await fetch("/api/plane/view")));
+      applyPlaneDraft(json.preview);
+    } catch (caught) {
+      setError(caught instanceof Error ? (caught.name === "AbortError" ? "Still saving timed out." : caught.message) : "That did not work.");
     } finally {
+      clearTimeout(timer);
       setBusy(false);
-      await reload();
+      await reload().catch((caught: unknown) => {
+        setError(caught instanceof Error ? caught.message : copy.cannotPush);
+      });
     }
   };
 
@@ -105,7 +138,11 @@ export function PlaneShell({ children }: { children: ReactNode }) {
           Describe a change
           <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} disabled={busy} />
         </label>
-        <button type="button" disabled={busy} onClick={() => void post("/api/plane/prompt", { prompt })}>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void post("/api/plane/prompt", { prompt, draft: collectPlaneDraft() })}
+        >
           Send
         </button>
         {busy ? <p className="plane-muted">{copy.busy}</p> : null}
