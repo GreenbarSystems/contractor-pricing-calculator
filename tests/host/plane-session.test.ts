@@ -50,6 +50,30 @@ describe("host plane session", () => {
     const work = linkedRepo();
     const opened = await bootPlane(work, "");
     expect(opened.kind).toBe("ready");
-    const first = await runPrompt("Turn one");
+    const first = await runPrompt("Turn one", { jobName: "Kitchen remodel", hourlyWage: "50" });
     expect(first.view.timeline[0]?.kind === "version" && first.view.timeline[0].note).toBe("Turn one");
-    expect(readFileSync(join(work, "turns/latest.md"), "utf8")).toContain)à‰QÕÉ¸½¹”ˆ¤ì(€€€½¹ÍÐÍ•½¹€ô…Ý…¥ÐÉÕ¹AÉ½µÁÐ ‰QÕÉ¸ÑÝ¼ˆ¤ì(€€€•áÁ•Ð¡Í•½¹¹Ù¥•Ü¹Ñ¥µ•±¥¹•lÁtü¹­¥¹€ôôô€‰Ù•ÉÍ¥½¸ˆ€˜˜Í•½¹¹Ù¥•Ü¹Ñ¥µ•±¥¹•lÁt¹¹½Ñ”¤¹Ñ½	” ‰QÕÉ¸ÑÝ¼ˆ¤ì(€€€½¹ÍÐ™¥ÉÍÑ%€ô™¥ÉÍÐ¹Ù¥•Ü¹Ñ¥µ•±¥¹•lÁtü¹­¥¹€ôôô€‰Ù•ÉÍ¥½¸ˆ€ü™¥ÉÍÐ¹Ù¥•Ü¹Ñ¥µ•±¥¹•lÁt¹Ù•ÉÍ¥½¸€è€ˆˆì(€€€½¹ÍÐÉ•ÍÑ½É•€ô…Ý…¥ÐÉÕ¹I•ÍÑ½É”¡™¥ÉÍÑ%¤ì(€€€•áÁ•Ð¡É•ÍÑ½É•¹É•ÍÕ±Ð¹­¥¹¤¹Ñ½	” ‰‘½¹”ˆ¤ì(€€€•áÁ•Ð¡É•ÍÑ½É•¹Ù¥•Ü¹Ñ¥µ•±¥¹•lÁtü¹­¥¹€ôôô€‰Ù•ÉÍ¥½¸ˆ€˜˜É•ÍÑ½É•¹Ù¥•Ü¹Ñ¥µ•±¥¹•lÁt¹¹½Ñ”¤¹Ñ½	” ‰QÕÉ¸½¹”ˆ¤ì(€€€•áÁ•Ð¡É•…‘¥±•Må¹Œ¡©½¥¸¡Ý½É¬°€‰ÑÕÉ¹Ì½±…Ñ•ÍÐ¹µˆ¤°€‰ÕÑ˜àˆ¤¤¹Ñ½½¹Ñ…¥¸ ‰QÕÉ¸½¹”ˆ¤ì(€ô¤ì((€¥Ð ‰É•ÑÕÉ¹Ì„ÁÕ‰±¥Í …É¥¹ÍÑ•…½˜µ•É¥¹œ½¸ÉÕ¸ˆ°…Íå¹Œ€ ¤€ôøì(€€€½¹ÍÐÝ½É¬€ô±¥¹­•‘I•Á¼ ¤ì(€€€½¹ÍÐ½Á•¹•€ô…Ý…¥Ð‰½½ÑA±…¹”¡Ý½É¬°€ˆˆ¤ì(€€€•áÁ•Ð¡½Á•¹•¹­¥¹¤¹Ñ½	” ‰É•…‘äˆ¤ì(€€€…Ý…¥ÐÉÕ¹AÉ½µÁÐ ‰I•…‘äˆ¤ì(€€€½¹ÍÐÁÕ‰±¥Í¡•€ô…Ý…¥ÐÉÕ¹AÕ‰±¥Í  ¤ì(€€€•áÁ•Ð¡ÁÕ‰±¥Í¡•¹É•ÍÕ±Ð¹­¥¹¤¹Ñ½	” ‰¹••‘Íe½Ôˆ¤ì(€€€¥˜€¡ÁÕ‰±¥Í¡•¹É•ÍÕ±Ð¹­¥¹€„ôô€‰¹••‘Íe½Ôˆ¤Ñ¡É½Ü¹•ÜÉÉ½È ‰…Éˆ¤ì(€€€•áÁ•Ð¡ÁÕ‰±¥Í¡•¹É•ÍÕ±Ð¹µ½Ù”¹­¥¹¤¹Ñ½	” ‰±¥¬ˆ¤ì(€ô¤ì)ô¤ì(
+    expect(readFileSync(join(work, "turns/latest.md"), "utf8")).toContain("Turn one");
+    expect(readFileSync(join(work, "turns/job.json"), "utf8")).toContain("Kitchen remodel");
+    expect(first.preview).toMatchObject({ jobName: "Kitchen remodel" });
+    const second = await runPrompt("Turn two", { jobName: "Deck" });
+    expect(second.view.timeline[0]?.kind === "version" && second.view.timeline[0].note).toBe("Turn two");
+    expect(readFileSync(join(work, "turns/job.json"), "utf8")).toContain("Deck");
+    const firstId = first.view.timeline[0]?.kind === "version" ? first.view.timeline[0].version : "";
+    const restored = await runRestore(firstId);
+    expect(restored.result.kind).toBe("done");
+    expect(restored.view.timeline[0]?.kind === "version" && restored.view.timeline[0].note).toBe("Turn one");
+    expect(readFileSync(join(work, "turns/latest.md"), "utf8")).toContain("Turn one");
+    expect(restored.preview).toMatchObject({ jobName: "Kitchen remodel" });
+  });
+
+  it("returns a publish card instead of merging on run", async () => {
+    const work = linkedRepo();
+    const opened = await bootPlane(work, "");
+    expect(opened.kind).toBe("ready");
+    await runPrompt("Ready");
+    const published = await runPublish();
+    expect(published.result.kind).toBe("needsYou");
+    if (published.result.kind !== "needsYou") throw new Error("card");
+    expect(published.result.move.kind).toBe("click");
+  });
+});
