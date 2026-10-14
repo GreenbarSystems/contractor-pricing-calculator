@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BusinessCostsSection } from "./sections/BusinessCostsSection.js";
 import { CrewSection } from "./sections/CrewSection.js";
 import { JobNameField } from "./sections/JobNameField.js";
@@ -18,6 +18,7 @@ import {
   withVisibleIssueMessages,
   type CalculatorDraft,
 } from "../lib/calculatorState.js";
+import { bindPlanePreview } from "../lib/planeBridge.js";
 import {
   calculateJobPrice,
   customerLanguage,
@@ -32,6 +33,8 @@ export function PricingCalculator() {
   // mount rather than read during render.
   const [restored, setRestored] = useState(false);
   const [draftWasRestored, setDraftWasRestored] = useState(false);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
 
   useEffect(() => {
     const stored = loadDraft();
@@ -40,6 +43,16 @@ export function PricingCalculator() {
       setDraftWasRestored(true);
     }
     setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    return bindPlanePreview(
+      () => draftRef.current,
+      (next) => {
+        setDraft(next);
+        setDraftWasRestored(true);
+      },
+    );
   }, []);
 
   useEffect(() => {
