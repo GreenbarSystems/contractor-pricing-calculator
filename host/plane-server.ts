@@ -67,11 +67,12 @@ async function handle(req: import("node:http").IncomingMessage, res: import("nod
     const body = req.method === "POST" ? await readJson(req) : {}
     if (path === "/api/prompt" && req.method === "POST") {
       const prompt = String(body.prompt ?? "").trim()
-      if (prompt.length === 0) {
-        send(400, { error: "Send a prompt.", copy })
+      const draft = "draft" in body ? body.draft : null
+      if (prompt.length === 0 && (draft === null || draft === undefined)) {
+        send(400, { error: "Change the job or describe the change, then send.", copy })
         return
       }
-      send(200, await runPrompt(prompt))
+      send(200, await runPrompt(prompt.length > 0 ? prompt : "Saved", draft))
       return
     }
     if ((path === "/api/undo" || path === "/api/restore") && req.method === "POST") {
