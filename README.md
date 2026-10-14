@@ -49,13 +49,18 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:3000.
+Then open http://127.0.0.1:43179. The first screen is the thread, the calculator preview, and the version list. Send a prompt. A version appears. Undo goes back. Publish shows a card. There is no Save button.
+
+`npm run dev` starts the Next app on 43179 and the control-plane host on 43188. `openProject` uses this repo's git workspace. An empty `GITHUB_TOKEN` mocks GitHub REST. Set `GITHUB_TOKEN` to push and open pull requests on github.com.
 
 ```bash
 npm run typecheck
 npm test
+npm run verify
 npm run build
 ```
+
+The control plane lives in `packages/control-plane`. Host wiring is `host/session.ts`. Checkpoint restore from the host is `goBack` (`host/intents.ts`). File writes go through `noteWrites`. The assistant saves at the end of a turn that changed files, and again when the process exits.
 
 ## Important note
 
