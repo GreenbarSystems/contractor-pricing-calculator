@@ -1,0 +1,17 @@
+export const copy = {
+  draft: "Your draft",
+  live: "Live",
+  openOnGitHub: "Open on GitHub",
+  empty: "Change the job or describe it, then send. A version appears.",
+  busy: "Still saving.",
+  locked: "This project is already open in another window.",
+  notLinked: "Link this project to GitHub before versions can be kept.",
+  cannotPush: "GitHub refused a push.",
+  waiting: "Waiting, with GitHub's link.",
+  fix: "Your next move is a fix.",
+  thisDraft: "This draft",
+  incoming: "Incoming",
+  undo: "Undo",
+  publish: "Publish",
+  noDraft: "No unpublished work yet",
+} as const

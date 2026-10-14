@@ -11,3 +11,5 @@ coverage/
 *.log
 .vscode/
 .idea/
+/AGENTS.md
+/CLAUDE.md
