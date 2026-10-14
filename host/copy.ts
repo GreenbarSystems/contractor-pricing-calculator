@@ -2,7 +2,7 @@ export const copy = {
   draft: "Your draft",
   live: "Live",
   openOnGitHub: "Open on GitHub",
-  empty: "Send a prompt. A version appears when files change.",
+  empty: "Change the job or describe it, then send. A version appears.",
   busy: "Still saving.",
   locked: "This project is already open in another window.",
   notLinked: "Link this project to GitHub before versions can be kept.",
