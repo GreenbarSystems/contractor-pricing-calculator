@@ -3,15 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": ["packages/control-plane"],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "test": "vitest run",
+    "dev": "concurrently -k \"npm run plane\" \"next dev -H 0.0.0.0 -p 43179\"",
+    "plane": "tsx host/plane-server.ts",
+    "build": "npm run build -w control-plane && next build",
+    "start": "next start -p 43179",
+    "test": "vitest run && npm test -w control-plane",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check-surface": "npm run check-surface -w control-plane",
+    "verify": "npm test && npm run typecheck && npm run build -w control-plane && npm run check-surface"
   },
   "dependencies": {
+    "control-plane": "*",
     "next": "^16.3.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
@@ -20,6 +25,8 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.3",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
