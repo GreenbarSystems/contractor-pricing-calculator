@@ -49,7 +49,7 @@ npm install
 npm run dev
 ```
 
-Then open http://127.0.0.1:43179. The first screen is the thread, the calculator preview, and the version list. Send a prompt. A version appears. Undo goes back. Publish shows a card. There is no Save button.
+Then open http://127.0.0.1:43179. The first screen is the thread, the calculator preview, and the version list. Change the job, Send. A version appears with those numbers. You can Send with an empty prompt if the job itself changed. Undo goes back. Publish shows a card. There is no Save button.
 
 `npm run dev` starts the Next app on 43179 and the control-plane host on 43188. `openProject` uses this repo's git workspace. An empty `GITHUB_TOKEN` mocks GitHub REST. Set `GITHUB_TOKEN` to push and open pull requests on github.com.
 
