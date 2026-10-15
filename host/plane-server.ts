@@ -43,6 +43,7 @@ async function handle(req: import("node:http").IncomingMessage, res: import("nod
     res.writeHead(code, {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "no-store, max-age=0",
     })
     res.end(JSON.stringify(body))
   }
@@ -60,7 +61,16 @@ async function handle(req: import("node:http").IncomingMessage, res: import("nod
       send(409, { error: opened.message, problem: opened.problem.kind, copy })
       return
     }
-    if (path === "/api/view" && req.method === "GET") {
+    if (path === "/api/view" && (req.method === "GET" || req.method === "HEAD")) {
+      if (req.method === "HEAD") {
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "no-store, max-age=0",
+        })
+        res.end()
+        return
+      }
       send(200, await snapshot())
       return
     }
