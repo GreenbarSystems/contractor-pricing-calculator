@@ -1,9 +1,22 @@
-import { PlaneShell } from "../components/PlaneShell.js";
-import { PricingCalculator } from "../components/PricingCalculator.js";
+import { PlaneShell, type Payload } from "../components/PlaneShell";
+import { PricingCalculator } from "../components/PricingCalculator";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+async function readPlane(): Promise<Payload | null> {
+  try {
+    const res = await fetch(`${process.env.PLANE_URL ?? "http://127.0.0.1:43188"}/api/view`, { cache: "no-store" });
+    if (!res.ok) return null;
+    return (await res.json()) as Payload;
+  } catch {
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const initial = await readPlane();
   return (
-    <PlaneShell>
+    <PlaneShell initial={initial}>
       <main className="page">
         <header className="masthead">
           <span className="eyebrow">Contractor job pricing</span>

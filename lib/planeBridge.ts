@@ -21,5 +21,12 @@ export function collectPlaneDraft(): CalculatorDraft | null {
 
 export function applyPlaneDraft(draft: unknown) {
   if (!set || !draft || typeof draft !== "object") return;
-  set(draft as CalculatorDraft);
+  const incoming = draft as Partial<CalculatorDraft>;
+  if (Array.isArray(incoming.laborRows)) {
+    set(incoming as CalculatorDraft);
+    return;
+  }
+  const current = get ? get() : null;
+  if (!current) return;
+  set({ ...current, ...incoming });
 }
