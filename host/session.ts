@@ -8,6 +8,7 @@ import { copy } from "./copy.js"
 
 const PREVIEW = join("turns", "job.json")
 const NOTE = join("turns", "latest.md")
+const THREAD = join("turns", "thread.json")
 
 export type ThreadTurn = { id: string; prompt: string; note: string }
 
@@ -92,7 +93,7 @@ export async function bootPlane(workspace: string, token: string) {
     return { kind: "problem" as const, problem: opened, message }
   }
   const view = await opened.human.view()
-  const state: HostState = { workspace, opened, view, thread: [] }
+  const state: HostState = { workspace, opened, view, thread: readThread(workspace) }
   opened.human.subscribe((next) => {
     state.view = next
   })
@@ -120,6 +121,7 @@ export async function runPrompt(prompt: string, draft: unknown = null) {
     state.opened.noteWrites(paths)
     await state.opened.agent.run({ kind: "save", note: toNote(prompt) })
     state.thread.push({ id: String(state.thread.length + 1), prompt, note: prompt })
+    writeThread(state.workspace, state.thread)
     state.view = await state.opened.human.view()
     return { view: state.view, thread: state.thread, preview: readPreview(state.workspace) }
   } finally {
@@ -162,6 +164,22 @@ function readPreview(workspace: string): unknown {
   } catch {
     return null
   }
+}
+
+function readThread(workspace: string): ThreadTurn[] {
+  const path = join(workspace, THREAD)
+  if (!existsSync(path)) return []
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as ThreadTurn[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function writeThread(workspace: string, thread: ThreadTurn[]) {
+  mkdirSync(join(workspace, dirname(THREAD)), { recursive: true })
+  writeFileSync(join(workspace, THREAD), `${JSON.stringify(thread, null, 2)}\n`)
 }
 
 export async function closePlane() {
